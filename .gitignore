@@ -1,0 +1,31 @@
+/target
+**/*.rs.bk
+*.swp
+*.swo
+.DS_Store
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/.terraform.lock.hcl
+infra/terraform.tfvars
+
+# Coverage
+coverage/
+*.profraw
+*.profdata
+
+# Lambda build artifacts
+target/lambda/

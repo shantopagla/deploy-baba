@@ -1,0 +1,95 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/config-core",
+    "crates/config-toml",
+    "crates/config-yaml",
+    "crates/config-json",
+    "crates/api-core",
+    "crates/api-openapi",
+    "crates/api-graphql",
+    "crates/api-grpc",
+    "crates/api-merger",
+    "crates/infra-types",
+    "services/ui",
+    "xtask",
+    "examples/01_multi_format_config",
+    "examples/02_api_spec_generation",
+    "examples/03_spec_merger",
+    "examples/04_infra_types",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/shantopagla/deploy-baba"
+authors = ["Shanto <shan2pagla@gmail.com>"]
+rust-version = "1.75"
+
+[workspace.dependencies]
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+toml = "0.8"
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Async
+tokio = { version = "1", features = ["full"] }
+
+# Web
+axum = "0.7"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# Lambda
+lambda_http = "0.13"
+
+# Templates
+askama = "0.12"
+askama_axum = "0.4"
+
+# OpenAPI
+utoipa = { version = "4", features = ["axum_extras"] }
+utoipa-rapidoc = "4"
+
+# Tracing
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# AWS SDK
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-sts = "1"
+aws-sdk-ssm = "1"
+aws-sdk-s3 = "1"
+aws-sdk-lambda = "1"
+aws-sdk-ecs = "1"
+aws-sdk-ecr = "1"
+aws-sdk-efs = "1"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Compression
+flate2 = "1"
+
+# Internal crates
+config-core = { path = "crates/config-core" }
+config-toml = { path = "crates/config-toml" }
+config-yaml = { path = "crates/config-yaml" }
+config-json = { path = "crates/config-json" }
+api-core = { path = "crates/api-core" }
+api-openapi = { path = "crates/api-openapi" }
+api-graphql = { path = "crates/api-graphql" }
+api-grpc = { path = "crates/api-grpc" }
+api-merger = { path = "crates/api-merger" }
+infra-types = { path = "crates/infra-types" }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "z"
+strip = true

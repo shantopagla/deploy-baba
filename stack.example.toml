@@ -1,0 +1,260 @@
+# deploy-baba Stack Configuration Example
+# This file demonstrates all available configuration options for an infrastructure stack.
+# Copy this to stack.toml and customize for your deployment.
+
+# ============================================================================
+# PROJECT METADATA
+# ============================================================================
+# Core project identification and deployment region.
+
+[project]
+# Project identifier used in resource naming and resource tags
+name = "deploy-baba"
+
+# Semantic version of the project
+version = "0.1.0"
+
+# Primary AWS region for resource deployment
+region = "us-east-1"
+
+# ============================================================================
+# DEPLOYMENT CONFIGURATION
+# ============================================================================
+# Compute deployment mode and runtime settings.
+
+[deploy]
+# Deployment mode: "lambda" for serverless, "ecs-fargate-spot" for containerized
+mode = "lambda"
+
+# Lambda function name (used in AWS console and API invocations)
+# For ECS, this is the task/service name
+function_name = "deploy-baba-ui"
+
+# Runtime environment identifier
+# Lambda values: "provided.al2023" (custom), "provided.al2", "python3.12", "nodejs20.x"
+# For ECS, this is typically ignored or can be a docker image tag
+runtime = "provided.al2023"
+
+# CPU architecture: "arm64" (Graviton2, cost-optimized) or "x86_64"
+# Arm64 is ~20% cheaper than x86_64 and fully supported in us-east-1
+architecture = "arm64"
+
+# Memory allocation in MB
+# Lambda: min 128, max 10240, increments of 1 MB
+# Allocate more for faster CPU (linear scaling up to 10GB)
+memory_mb = 256
+
+# Maximum execution duration in seconds
+# Lambda: max 15 minutes (900 seconds)
+# ECS: typically 60-300 for transient tasks
+timeout_seconds = 30
+
+# ============================================================================
+# DATABASE CONFIGURATION
+# ============================================================================
+# SQLite database with optional S3-based backups for persistence.
+
+[database]
+# Filesystem path to the SQLite database file
+# In Lambda, must be within /tmp (ephemeral) or EBS mount
+# In production, use EBS volume or managed storage
+path = "/mnt/db/deploy-baba.db"
+
+# Enable Write-Ahead Logging (WAL) mode for better concurrency
+# Improves performance in multi-connection scenarios
+wal_mode = true
+
+# Optional S3 backup configuration for database durability
+[database.backup]
+# S3 bucket name for backups (must already exist)
+bucket = "deploy-baba-backups"
+
+# S3 bucket prefix (folder path within bucket)
+prefix = "databases/deploy-baba"
+
+# Backup schedule in cron expression format (UTC)
+# Run daily at 2 AM UTC
+schedule = "0 2 * * *"
+
+# Retention period: number of backup versions to keep
+retention_days = 7
+
+# ============================================================================
+# NETWORK CONFIGURATION
+# ============================================================================
+# VPC, security groups, and network access control.
+
+[network]
+# VPC ID - if empty, uses default VPC
+vpc_id = ""
+
+# Availability zones for multi-AZ deployment
+# Example: ["us-east-1a", "us-east-1b", "us-east-1c"]
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# Subnets for deployment
+[[network.subnets]]
+# Subnet ID
+id = "subnet-xxxxx"
+# Availability zone
+zone = "us-east-1a"
+# CIDR block
+cidr = "10.0.1.0/24"
+
+# Security group for Lambda/ECS function
+[network.security_group]
+# Security group name
+name = "deploy-baba-sg"
+
+# Security group description
+description = "Security group for deploy-baba Lambda function"
+
+# Inbound traffic rules
+[[network.security_group.ingress]]
+# Protocol: "tcp", "udp", "icmp", "-1" (all)
+protocol = "tcp"
+# Port or port range (single port: 443, range: "80-443")
+port = 443
+# Source CIDR block (0.0.0.0/0 = any)
+cidr_block = "0.0.0.0/0"
+# Optional description
+description = "HTTPS from anywhere"
+
+[[network.security_group.ingress]]
+protocol = "tcp"
+port = 80
+cidr_block = "0.0.0.0/0"
+description = "HTTP from anywhere"
+
+# Outbound traffic rules (egress)
+[[network.security_group.egress]]
+protocol = "-1"  # All protocols
+port = 0
+cidr_block = "0.0.0.0/0"
+description = "Allow all outbound traffic"
+
+# ============================================================================
+# OBSERVABILITY CONFIGURATION
+# ============================================================================
+# Logging, metrics, and alerting configuration.
+
+[observability]
+# Log level: "debug", "info", "warn", "error"
+# Control verbosity of application logs
+log_level = "info"
+
+# CloudWatch log group name
+log_group = "/aws/lambda/deploy-baba"
+
+# Log retention period in days
+log_retention_days = 7
+
+# CloudWatch namespace for metrics
+# Metrics will appear under this namespace in CloudWatch console
+cloudwatch_namespace = "deploy-baba"
+
+# ============================================================================
+# OBSERVABILITY - METRICS
+# ============================================================================
+# Application metrics and monitoring.
+
+[observability.metrics]
+# Enable metrics collection
+enabled = true
+
+# CloudWatch metric unit: "Count", "Seconds", "Bytes", "Percent", etc.
+unit = "Milliseconds"
+
+# Metric reporting interval in seconds
+report_interval_seconds = 60
+
+# Custom metrics to track (examples)
+custom_metrics = [
+  "request_latency",
+  "cache_hit_rate",
+  "api_errors",
+]
+
+# ============================================================================
+# OBSERVABILITY - ALERTS
+# ============================================================================
+# CloudWatch alarms for operational awareness.
+
+[observability.alerts]
+# Enable alerting
+enabled = true
+
+# SNS topic ARN for alert notifications (optional)
+# If set, alarms will send notifications to this topic
+sns_topic_arn = "arn:aws:sns:us-east-1:123456789012:deploy-baba-alerts"
+
+# Error rate threshold (percentage)
+error_rate_threshold = 1.0
+
+# P99 latency threshold in milliseconds
+p99_latency_threshold_ms = 5000
+
+# CloudWatch alarm action: "ALARM" severity
+alarm_actions = ["ALARM"]
+
+# ============================================================================
+# AWS CONFIGURATION
+# ============================================================================
+# AWS-specific settings and service configuration.
+
+[aws]
+# AWS named profile from ~/.aws/credentials
+# If empty, uses default profile or IAM role (in Lambda environment)
+profile = "deploy-baba"
+
+# AWS account ID (for resource ARN construction)
+account_id = "123456789012"
+
+# Terraform state bucket prefix
+# Full bucket name: deploy-baba-tfstate-us-east-1
+state_bucket_prefix = "deploy-baba-tfstate"
+
+# Enable versioning on Terraform state bucket (recommended)
+state_bucket_versioning = true
+
+# Systems Manager Parameter Store prefix for secrets
+# Secrets stored at: /deploy-baba/database/password, etc.
+ssm_prefix = "/deploy-baba"
+
+# ============================================================================
+# NOTES AND BEST PRACTICES
+# ============================================================================
+
+# Architecture Choice (arm64 vs x86_64):
+# - arm64 (Graviton2): 20% cheaper, sufficient for most workloads
+# - x86_64: Needed only for legacy dependencies
+# Recommendation: Use arm64 unless you have compatibility issues
+
+# Memory Allocation:
+# - Lambda bills for GB-seconds used, so higher memory = faster = cheaper
+# - Minimum 128 MB, maximum 10 GB
+# - CPU scales linearly with memory (1 vCPU at 1769 MB)
+# - Start at 256 MB for cold start testing, increase if needed
+
+# Database Path:
+# - Lambda /tmp is 10 GB ephemeral, auto-cleaned after execution
+# - For persistence, use EBS volume mount (requires VPC config)
+# - S3 backup provides durability across instances
+# - WAL mode improves concurrent reads during backups
+
+# Network:
+# - Leave vpc_id empty to use default VPC
+# - Security groups restrict inbound/outbound traffic
+# - For Lambda, only outbound egress typically needed (unless API endpoint)
+# - ALB/API Gateway handles inbound HTTP/HTTPS
+
+# Observability:
+# - Log retention: shorter = cheaper, longer = easier debugging
+# - Metrics: CloudWatch charges per metric (first 10 free)
+# - Alarms: SNS topic sends notifications (email, Slack integration)
+
+# Sensitive Values:
+# - Never commit AWS credentials to git
+# - Use AWS_PROFILE environment variable or IAM roles
+# - Store secrets in AWS Secrets Manager or Parameter Store
+# - Reference via ssm_prefix in stack.toml

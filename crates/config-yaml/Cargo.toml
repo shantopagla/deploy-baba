@@ -1,0 +1,15 @@
+[package]
+name = "config-yaml"
+description = "YAML implementation of config-core universal traits"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+config-core = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+serde_yaml = { workspace = true }

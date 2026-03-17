@@ -1,0 +1,13 @@
+[package]
+name = "example_01_multi_format_config"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+config-core = { workspace = true }
+config-toml = { workspace = true }
+config-yaml = { workspace = true }
+config-json = { workspace = true }
+serde = { workspace = true }

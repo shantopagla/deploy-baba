@@ -1,0 +1,44 @@
+[package]
+name = "deploy-baba-ui"
+description = "Portfolio site and live API demo for deploy-baba"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+# Internal crates — live demo
+config-core = { workspace = true }
+config-toml = { workspace = true }
+config-yaml = { workspace = true }
+config-json = { workspace = true }
+api-core = { workspace = true }
+api-openapi = { workspace = true }
+api-merger = { workspace = true }
+infra-types = { workspace = true }
+
+# Web framework
+axum = { workspace = true }
+lambda_http = { workspace = true }
+tokio = { workspace = true }
+tower-http = { workspace = true }
+
+# Templates (compile-time)
+askama = { workspace = true }
+askama_axum = { workspace = true }
+
+# OpenAPI
+utoipa = { workspace = true }
+
+# Serialization + error handling
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

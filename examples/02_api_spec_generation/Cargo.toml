@@ -1,0 +1,15 @@
+[package]
+name = "example_02_api_spec_generation"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+api-core = { workspace = true }
+api-openapi = { workspace = true }
+api-graphql = { workspace = true }
+api-grpc = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }

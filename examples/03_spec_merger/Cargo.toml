@@ -1,0 +1,14 @@
+[package]
+name = "example_03_spec_merger"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+api-core = { workspace = true }
+api-openapi = { workspace = true }
+api-merger = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+utoipa = { workspace = true }

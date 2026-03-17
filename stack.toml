@@ -1,0 +1,31 @@
+[project]
+name = "deploy-baba"
+version = "0.1.0"
+region = "us-east-1"
+
+[deploy]
+mode = "lambda"  # "lambda" or "ecs-fargate-spot"
+function_name = "deploy-baba-ui"
+runtime = "provided.al2023"
+architecture = "arm64"
+memory_mb = 256
+timeout_seconds = 30
+
+[database]
+path = "/mnt/db/deploy-baba.db"
+wal_mode = true
+
+[database.backup]
+bucket = "deploy-baba-backups"
+prefix = "backups/"
+retain_versions = 7
+schedule = "rate(1 day)"
+
+[observability]
+log_level = "info"
+cloudwatch_namespace = "deploy-baba"
+
+[aws]
+profile = "deploy-baba"
+state_bucket_prefix = "deploy-baba-tfstate"
+ssm_prefix = "/deploy-baba"
