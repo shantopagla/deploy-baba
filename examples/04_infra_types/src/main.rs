@@ -7,8 +7,8 @@
 
 use infra_types::{
     AwsConfig, DeployConfig, HealthCheck, LogLevel, MetricsConfig, NetworkConfig,
-    ObservabilityConfig, ProjectConfig, S3BackupConfig, ScalingConfig, ServiceConfig,
-    SqliteConfig, Stack,
+    ObservabilityConfig, ProjectConfig, S3BackupConfig, ScalingConfig, ServiceConfig, SqliteConfig,
+    Stack,
 };
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Infrastructure Types Example ===\n");
@@ -23,7 +23,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         version: "0.1.0".to_string(),
         region: "us-east-1".to_string(),
     };
-    println!("✓ Project: {} v{} in {}", project.name, project.version, project.region);
+    println!(
+        "✓ Project: {} v{} in {}",
+        project.name, project.version, project.region
+    );
 
     // Deployment configuration
     let deploy = DeployConfig {
@@ -56,7 +59,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     println!("✓ Database: SQLite at {}", database.path);
     println!("  WAL Mode: {}", database.wal_mode);
-    println!("  Backup: S3 bucket '{}' with 30-day retention", database.backup.as_ref().unwrap().bucket);
+    println!(
+        "  Backup: S3 bucket '{}' with 30-day retention",
+        database.backup.as_ref().unwrap().bucket
+    );
 
     // Network configuration
     let mut network = NetworkConfig::new("10.0.0.0/16");
@@ -79,7 +85,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "✓ Observability: Log level {:?}, metrics namespace '{}'",
         observability.log_level,
-        observability.metrics.as_ref().map(|m| m.namespace.as_str()).unwrap_or("none")
+        observability
+            .metrics
+            .as_ref()
+            .map(|m| m.namespace.as_str())
+            .unwrap_or("none")
     );
 
     // AWS configuration
@@ -88,7 +98,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         state_bucket_prefix: "deploy-baba-tfstate".to_string(),
         ssm_prefix: "/deploy-baba".to_string(),
     };
-    println!("✓ AWS: Profile '{}' SSM prefix '{}'", aws.profile, aws.ssm_prefix);
+    println!(
+        "✓ AWS: Profile '{}' SSM prefix '{}'",
+        aws.profile, aws.ssm_prefix
+    );
     println!("  State bucket: {}", aws.state_bucket_name());
 
     // Assemble the complete stack
@@ -132,7 +145,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_with_backup = SqliteConfig::with_path("/mnt/data.db").with_backup(backup_config);
     println!("DB with backup: {}", db_with_backup.path);
     println!("  Has backup: {}", db_with_backup.has_backup());
-    println!("  DB filename: {}\n", db_with_backup.filename().unwrap_or("unknown"));
+    println!(
+        "  DB filename: {}\n",
+        db_with_backup.filename().unwrap_or("unknown")
+    );
 
     // Example 3: Service configuration
     let api_service = ServiceConfig::new("api", 8080)
@@ -146,7 +162,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             max_instances: 20,
             target_cpu_percent: 70,
         });
-    println!("API Service: {} on port {}", api_service.name, api_service.port);
+    println!(
+        "API Service: {} on port {}",
+        api_service.name, api_service.port
+    );
     println!(
         "  Health check: {:?}",
         api_service.health_check.as_ref().map(|hc| &hc.path)
@@ -183,11 +202,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("TOML size: {} bytes", stack_toml.len());
     println!(
         "Configuration keys: {}, {}, {}, {}, {}",
-        if !stack.project.name.is_empty() { "project" } else { "" },
-        if !stack.deploy.mode.is_empty() { "deploy" } else { "" },
-        if !stack.database.path.is_empty() { "database" } else { "" },
-        if stack.observability.metrics.is_some() { "observability" } else { "observability" },
-        if !stack.aws.profile.is_empty() { "aws" } else { "" }
+        if !stack.project.name.is_empty() {
+            "project"
+        } else {
+            ""
+        },
+        if !stack.deploy.mode.is_empty() {
+            "deploy"
+        } else {
+            ""
+        },
+        if !stack.database.path.is_empty() {
+            "database"
+        } else {
+            ""
+        },
+        if stack.observability.metrics.is_some() {
+            "observability"
+        } else {
+            "observability"
+        },
+        if !stack.aws.profile.is_empty() {
+            "aws"
+        } else {
+            ""
+        }
     );
 
     println!("\n7. Summary");

@@ -201,6 +201,9 @@ async fn create_sentinel_parameter(config: &aws_config::SdkConfig) -> anyhow::Re
         .await
         .map_err(|e| anyhow::anyhow!("Failed to write sentinel parameter: {}", e))?;
 
-    println!("   ✅ Sentinel parameter written: {} = {}", SENTINEL_PARAM, SENTINEL_VALUE);
+    println!(
+        "   ✅ Sentinel parameter written: {} = {}",
+        SENTINEL_PARAM, SENTINEL_VALUE
+    );
     Ok(())
 }

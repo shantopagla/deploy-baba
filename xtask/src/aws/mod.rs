@@ -54,10 +54,7 @@ pub async fn execute(action: AwsAction) -> anyhow::Result<()> {
 /// Create AWS SDK config with optional profile
 pub async fn create_aws_config(profile: Option<String>) -> anyhow::Result<aws_config::SdkConfig> {
     let config = if let Some(p) = profile {
-        aws_config::from_env()
-            .profile_name(p)
-            .load()
-            .await
+        aws_config::from_env().profile_name(p).load().await
     } else {
         aws_config::load_from_env().await
     };

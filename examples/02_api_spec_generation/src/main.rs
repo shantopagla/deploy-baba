@@ -6,7 +6,10 @@
 
 use api_core::ApiSpecGenerator;
 use api_graphql::{GraphQLGenerator, GraphQLSchema, GraphQLSchemaDefinition};
-use api_grpc::{GrpcGenerator, GrpcSchema, MethodStreaming, ProtoDefinition, ProtoField, ProtoMessage, ProtoMethod, ProtoService};
+use api_grpc::{
+    GrpcGenerator, GrpcSchema, MethodStreaming, ProtoDefinition, ProtoField, ProtoMessage,
+    ProtoMethod, ProtoService,
+};
 use api_openapi::{OpenApiGenerator, OpenApiSchema};
 use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
@@ -221,7 +224,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Schemas: {}\n", openapi_spec.metadata.schema_count);
 
     let openapi_json = serde_json::to_string_pretty(&openapi_spec.openapi)?;
-    println!("OpenAPI JSON (truncated):\n{}\n",
+    println!(
+        "OpenAPI JSON (truncated):\n{}\n",
         if openapi_json.len() > 400 {
             format!("{}...", &openapi_json[..400])
         } else {

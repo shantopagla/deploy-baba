@@ -95,22 +95,37 @@ async fn run() -> anyhow::Result<()> {
         Commands::Infra { action } => infra::execute(action).await,
         Commands::Deploy { action } => deploy::execute(action).await,
         Commands::Database { action } => database::execute(action).await,
-        Commands::Publish { environment, dry_run } => publish(environment, dry_run).await,
+        Commands::Publish {
+            environment,
+            dry_run,
+        } => publish(environment, dry_run).await,
     }
 }
 
 async fn publish(environment: String, dry_run: bool) -> anyhow::Result<()> {
-    println!("📦 Publishing to {}{}", environment, if dry_run { " (dry run)" } else { "" });
+    println!(
+        "📦 Publishing to {}{}",
+        environment,
+        if dry_run { " (dry run)" } else { "" }
+    );
 
     // Validate quality gates
     quality::execute(quality::QualityAction::All).await?;
 
     // Build release artifacts
-    build::execute(build::BuildAction::Compile { release: true, features: None }).await?;
+    build::execute(build::BuildAction::Compile {
+        release: true,
+        features: None,
+    })
+    .await?;
 
     // Deploy
     if !dry_run {
-        deploy::execute(deploy::DeployAction::Lambda { function: None, profile: None }).await?;
+        deploy::execute(deploy::DeployAction::Lambda {
+            function: None,
+            profile: None,
+        })
+        .await?;
         println!("✅ Published successfully");
     } else {
         println!("✅ Publish validated (dry run)");

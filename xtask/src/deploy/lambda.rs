@@ -28,7 +28,12 @@ pub async fn deploy(function: Option<String>, profile: Option<String>) -> anyhow
             TARGET,
         ])
         .status()
-        .map_err(|e| anyhow::anyhow!("Failed to run cargo lambda: {} (is cargo-lambda installed?)", e))?;
+        .map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to run cargo lambda: {} (is cargo-lambda installed?)",
+                e
+            )
+        })?;
 
     if !status.success() {
         return Err(anyhow::anyhow!("cargo lambda build failed"));

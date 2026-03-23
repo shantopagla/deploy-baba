@@ -1,6 +1,6 @@
 pub mod crates;
-pub mod stack;
 pub mod demo;
+pub mod stack;
 
 use axum::Router;
 

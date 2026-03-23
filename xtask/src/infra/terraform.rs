@@ -16,7 +16,10 @@ fn make_cmd(dir: Option<String>, profile: Option<String>) -> (Command, String) {
     (cmd, dir)
 }
 
-pub async fn run_terraform_init(dir: Option<String>, profile: Option<String>) -> anyhow::Result<()> {
+pub async fn run_terraform_init(
+    dir: Option<String>,
+    profile: Option<String>,
+) -> anyhow::Result<()> {
     let (mut cmd, dir) = make_cmd(dir, profile);
     println!("🔧 Initializing Terraform ({})...", dir);
     cmd.arg("init");
@@ -30,7 +33,10 @@ pub async fn run_terraform_init(dir: Option<String>, profile: Option<String>) ->
     Ok(())
 }
 
-pub async fn run_terraform_plan(dir: Option<String>, profile: Option<String>) -> anyhow::Result<()> {
+pub async fn run_terraform_plan(
+    dir: Option<String>,
+    profile: Option<String>,
+) -> anyhow::Result<()> {
     let (mut cmd, dir) = make_cmd(dir, profile);
     println!("📋 Planning Terraform ({})...", dir);
     cmd.arg("plan");
@@ -96,7 +102,9 @@ pub async fn run_terraform_output(
     let (mut cmd, dir) = make_cmd(dir, profile);
     println!(
         "📤 Getting Terraform output{} ({})...",
-        name.as_ref().map(|n| format!(": {}", n)).unwrap_or_default(),
+        name.as_ref()
+            .map(|n| format!(": {}", n))
+            .unwrap_or_default(),
         dir,
     );
     cmd.arg("output");

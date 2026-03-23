@@ -67,9 +67,7 @@ pub async fn push(image_uri: &str, profile: Option<String>) -> anyhow::Result<()
 
     // Push image
     println!("   Pushing image...");
-    let status = Command::new("docker")
-        .args(&["push", image_uri])
-        .status()?;
+    let status = Command::new("docker").args(&["push", image_uri]).status()?;
 
     if !status.success() {
         return Err(anyhow::anyhow!("Docker push failed"));
@@ -91,13 +89,15 @@ fn base64_decode(input: &str) -> anyhow::Result<String> {
         .map_err(|e| anyhow::anyhow!("Failed to spawn base64: {}", e))?;
 
     if let Some(ref mut stdin) = child.stdin {
-        stdin.write_all(input.as_bytes())
+        stdin
+            .write_all(input.as_bytes())
             .map_err(|e| anyhow::anyhow!("Failed to write to base64 stdin: {}", e))?;
     }
     // Drop stdin to signal EOF
     child.stdin.take();
 
-    let output = child.wait_with_output()
+    let output = child
+        .wait_with_output()
         .map_err(|e| anyhow::anyhow!("Failed to wait for base64: {}", e))?;
 
     if !output.status.success() {

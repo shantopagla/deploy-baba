@@ -21,10 +21,18 @@ pub enum QualityAction {
 pub async fn execute(action: QualityAction) -> anyhow::Result<()> {
     match action {
         QualityAction::All => run_all_gates().await,
-        QualityAction::Format => crate::build::execute(crate::build::BuildAction::Format { check: true }).await,
-        QualityAction::Lint => crate::build::execute(crate::build::BuildAction::Lint { fix: false }).await,
-        QualityAction::Test => crate::test::execute(crate::test::TestAction::All { crate_name: None }).await,
-        QualityAction::Coverage => crate::coverage::execute(crate::coverage::CoverageAction::Floors).await,
+        QualityAction::Format => {
+            crate::build::execute(crate::build::BuildAction::Format { check: true }).await
+        }
+        QualityAction::Lint => {
+            crate::build::execute(crate::build::BuildAction::Lint { fix: false }).await
+        }
+        QualityAction::Test => {
+            crate::test::execute(crate::test::TestAction::All { crate_name: None }).await
+        }
+        QualityAction::Coverage => {
+            crate::coverage::execute(crate::coverage::CoverageAction::Floors).await
+        }
     }
 }
 

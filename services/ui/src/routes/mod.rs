@@ -1,3 +1,3 @@
-pub mod landing;
-pub mod health;
 pub mod api;
+pub mod health;
+pub mod landing;

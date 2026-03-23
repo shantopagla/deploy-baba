@@ -24,11 +24,7 @@ pub async fn get_parameter(name: &str, profile: Option<String>) -> anyhow::Resul
     Ok(value)
 }
 
-pub async fn set_parameter(
-    name: &str,
-    value: &str,
-    profile: Option<String>,
-) -> anyhow::Result<()> {
+pub async fn set_parameter(name: &str, value: &str, profile: Option<String>) -> anyhow::Result<()> {
     println!("📝 Setting SSM parameter: {}", name);
 
     let config = super::create_aws_config(profile).await?;

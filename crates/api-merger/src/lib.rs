@@ -264,17 +264,15 @@ impl SpecificationMerger {
                 merge_openapi_specs(specs.into_iter().map(|s| s.openapi).collect())
                     .map_err(|e| MergeError::MergeFailed(e.to_string()))
             }
-            _ => {
-                merge_openapi_specs(specs.into_iter().map(|s| s.openapi).collect()).map_err(|e| {
-                    conflicts.push(MergeConflict {
-                        conflict_type: ConflictType::DuplicatePath,
-                        path: "unknown".to_string(),
-                        description: e.to_string(),
-                        resolution: "Failed".to_string(),
-                    });
-                    MergeError::MergeFailed(e.to_string())
-                })
-            }
+            _ => merge_openapi_specs(specs.into_iter().map(|s| s.openapi).collect()).map_err(|e| {
+                conflicts.push(MergeConflict {
+                    conflict_type: ConflictType::DuplicatePath,
+                    path: "unknown".to_string(),
+                    description: e.to_string(),
+                    resolution: "Failed".to_string(),
+                });
+                MergeError::MergeFailed(e.to_string())
+            }),
         }
     }
 

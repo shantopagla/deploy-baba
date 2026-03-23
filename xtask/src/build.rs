@@ -50,9 +50,7 @@ async fn format_code(check: bool) -> anyhow::Result<()> {
         println!("✅ Code formatting is correct");
     } else {
         println!("🎨 Formatting code...");
-        let status = Command::new("cargo")
-            .args(&["fmt", "--all"])
-            .status()?;
+        let status = Command::new("cargo").args(&["fmt", "--all"]).status()?;
         if !status.success() {
             return Err(anyhow::anyhow!("Code formatting failed"));
         }

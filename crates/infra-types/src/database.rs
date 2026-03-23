@@ -218,8 +218,7 @@ mod tests {
 
     #[test]
     fn test_s3_backup_with_schedule() {
-        let backup = S3BackupConfig::new("backups", "db")
-            .with_schedule("cron(0 2 * * ? *)");
+        let backup = S3BackupConfig::new("backups", "db").with_schedule("cron(0 2 * * ? *)");
 
         assert_eq!(backup.schedule, "cron(0 2 * * ? *)");
     }

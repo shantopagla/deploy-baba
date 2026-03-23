@@ -1,8 +1,4 @@
-use axum::{
-    response::Html,
-    routing::get,
-    Router,
-};
+use axum::{response::Html, routing::get, Router};
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use utoipa::OpenApi;
@@ -29,11 +25,13 @@ pub fn build() -> Router {
 }
 
 async fn docs_handler() -> Html<&'static str> {
-    Html(r#"<!doctype html>
+    Html(
+        r#"<!doctype html>
 <html><head><meta charset="utf-8"><title>deploy-baba API Docs</title>
 <script type="module" src="https://unpkg.com/rapidoc/dist/rapidoc-min.js"></script>
 </head><body>
 <rapi-doc spec-url="/api/openapi.json" theme="dark" render-style="read"
   show-header="false" allow-try="true"></rapi-doc>
-</body></html>"#)
+</body></html>"#,
+    )
 }

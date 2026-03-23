@@ -58,7 +58,9 @@ async fn generate_report(open: bool) -> anyhow::Result<()> {
     println!("✅ Coverage report generated: target/coverage/index.html");
 
     if open {
-        let _ = Command::new("open").arg("target/coverage/index.html").status();
+        let _ = Command::new("open")
+            .arg("target/coverage/index.html")
+            .status();
     }
 
     Ok(())
@@ -129,7 +131,10 @@ async fn enforce_floors() -> anyhow::Result<()> {
                 }
             }
             Err(_) => {
-                println!("   ⚠️  {}: no coverage data (crate may not exist)", crate_name);
+                println!(
+                    "   ⚠️  {}: no coverage data (crate may not exist)",
+                    crate_name
+                );
             }
         }
     }

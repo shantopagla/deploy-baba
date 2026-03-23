@@ -48,7 +48,10 @@ fn validate_app_config(config: &AppConfig) -> Result<(), Vec<ValidationError>> {
     let mut errors = Vec::new();
 
     if config.app_name.is_empty() {
-        errors.push(ValidationError::new("app_name", "Application name cannot be empty"));
+        errors.push(ValidationError::new(
+            "app_name",
+            "Application name cannot be empty",
+        ));
     }
 
     if config.port == 0 {
@@ -134,7 +137,10 @@ port = 0
 enable_logging = true
 max_connections = 0
 "#;
-    println!("Invalid TOML (empty app_name, port=0, max_connections=0):\n{}", invalid_toml);
+    println!(
+        "Invalid TOML (empty app_name, port=0, max_connections=0):\n{}",
+        invalid_toml
+    );
 
     let toml_result: Result<AppConfig, _> = TomlParser::parse_and_validate(invalid_toml);
     match toml_result {
