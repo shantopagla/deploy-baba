@@ -42,7 +42,7 @@ async fn generate_report(open: bool) -> anyhow::Result<()> {
     println!("📊 Generating coverage report...");
 
     let mut cmd = Command::new("cargo");
-    cmd.args(&[
+    cmd.args([
         "llvm-cov",
         "--workspace",
         "--html",
@@ -70,7 +70,7 @@ async fn check_threshold(threshold: u8) -> anyhow::Result<()> {
     println!("🎯 Checking coverage threshold: {}%", threshold);
 
     let output = Command::new("cargo")
-        .args(&["llvm-cov", "--workspace", "--summary-only"])
+        .args(["llvm-cov", "--workspace", "--summary-only"])
         .output()?;
 
     if !output.status.success() {
@@ -153,7 +153,7 @@ async fn enforce_floors() -> anyhow::Result<()> {
 
 async fn get_crate_coverage(crate_name: &str) -> anyhow::Result<f64> {
     let output = Command::new("cargo")
-        .args(&["llvm-cov", "--package", crate_name, "--summary-only"])
+        .args(["llvm-cov", "--package", crate_name, "--summary-only"])
         .output()?;
 
     if !output.status.success() {

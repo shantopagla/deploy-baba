@@ -67,7 +67,7 @@ pub async fn push(image_uri: &str, profile: Option<String>) -> anyhow::Result<()
 
     // Push image
     println!("   Pushing image...");
-    let status = Command::new("docker").args(&["push", image_uri]).status()?;
+    let status = Command::new("docker").args(["push", image_uri]).status()?;
 
     if !status.success() {
         return Err(anyhow::anyhow!("Docker push failed"));

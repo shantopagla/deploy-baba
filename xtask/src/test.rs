@@ -47,11 +47,11 @@ async fn run_unit_tests(crate_name: Option<String>) -> anyhow::Result<()> {
     println!("🧪 Running unit tests...");
 
     let mut cmd = Command::new("cargo");
-    cmd.args(&["test", "--lib"]);
+    cmd.args(["test", "--lib"]);
 
     if let Some(name) = &crate_name {
         println!("   Testing crate: {}", name);
-        cmd.args(&["--package", name]);
+        cmd.args(["--package", name]);
     } else {
         println!("   Testing all crates");
         cmd.arg("--workspace");
@@ -69,11 +69,11 @@ async fn run_integration_tests(crate_name: Option<String>) -> anyhow::Result<()>
     println!("🔗 Running integration tests...");
 
     let mut cmd = Command::new("cargo");
-    cmd.args(&["test", "--test", "*"]);
+    cmd.args(["test", "--test", "*"]);
 
     if let Some(name) = &crate_name {
         println!("   Testing crate: {}", name);
-        cmd.args(&["--package", name]);
+        cmd.args(["--package", name]);
     } else {
         println!("   Testing all crates");
         cmd.arg("--workspace");
@@ -95,7 +95,7 @@ async fn run_all_tests(crate_name: Option<String>) -> anyhow::Result<()> {
 
     if let Some(name) = &crate_name {
         println!("   Testing crate: {}", name);
-        cmd.args(&["--package", name]);
+        cmd.args(["--package", name]);
     } else {
         println!("   Testing all crates");
         cmd.arg("--workspace");
@@ -113,7 +113,7 @@ async fn run_crate_tests(crate_name: &str) -> anyhow::Result<()> {
     println!("🧪 Running tests for crate: {}", crate_name);
 
     let status = Command::new("cargo")
-        .args(&["test", "--package", crate_name])
+        .args(["test", "--package", crate_name])
         .status()?;
 
     if !status.success() {
