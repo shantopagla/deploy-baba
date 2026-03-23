@@ -13,7 +13,7 @@ default:
 
 # Format all code
 fmt:
-    cargo xtask build fmt
+    cargo xtask build format
 
 # Run clippy (warnings = errors)
 lint:
@@ -33,7 +33,7 @@ test-all:
 
 # Run tests for a single crate
 test-crate CRATE:
-    cargo xtask test --crate {{CRATE}}
+    cargo xtask test crate {{CRATE}}
 
 # Generate coverage report (opens in browser)
 coverage:
@@ -45,7 +45,7 @@ dev:
 
 # Full quality gate (fmt + lint + test + coverage floors + audit)
 quality:
-    cargo xtask quality gate
+    cargo xtask quality all
 
 # Build all crates (release)
 build:
@@ -66,6 +66,22 @@ doc-check:
 # Run an example: just example 01_multi_format_config
 example NAME:
     cargo run -p example_{{NAME}}
+
+# Build the Lambda zip for aarch64 (requires cargo-lambda + aarch64 toolchain)
+lambda-build:
+    PATH="$HOME/.cargo/bin:$PATH" cargo lambda build --release --package deploy-baba-ui --target aarch64-unknown-linux-gnu
+
+# Build Lambda zip + upload to the deployed function
+lambda-deploy PROFILE="default":
+    just aws-check {{PROFILE}} && just lambda-build && cargo xtask deploy lambda --profile {{PROFILE}}
+
+# Verify the live deployment (curl apex + www health checks)
+infra-verify DOMAIN="sislam.com":
+    @echo "=== Verifying {{DOMAIN}} ==="
+    curl -sI https://{{DOMAIN}} | head -1
+    curl -sI https://www.{{DOMAIN}} | head -1
+    curl -s https://{{DOMAIN}}/health
+    @echo ""
 
 # ── UI / Portfolio Site ──────────────────────────────────────────────────────
 

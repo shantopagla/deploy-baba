@@ -1,8 +1,4 @@
-use axum::{
-    extract::Json,
-    routing::post,
-    Router,
-};
+use axum::{extract::Json, routing::post, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -48,56 +44,51 @@ pub struct GenerateSpecResponse {
         (status = 400, description = "Invalid request", body = ParseConfigResponse)
     )
 )]
-pub async fn parse_config(
-    Json(req): Json<ParseConfigRequest>,
-) -> Json<ParseConfigResponse> {
+pub async fn parse_config(Json(req): Json<ParseConfigRequest>) -> Json<ParseConfigResponse> {
     let result = match req.format.to_lowercase().as_str() {
-        "toml" => {
-            match toml::from_str::<Value>(&req.content) {
-                Ok(val) => ParseConfigResponse {
-                    success: true,
-                    parsed: Some(val),
-                    error: None,
-                },
-                Err(e) => ParseConfigResponse {
-                    success: false,
-                    parsed: None,
-                    error: Some(format!("TOML parse error: {}", e)),
-                },
-            }
-        }
-        "json" => {
-            match serde_json::from_str::<Value>(&req.content) {
-                Ok(val) => ParseConfigResponse {
-                    success: true,
-                    parsed: Some(val),
-                    error: None,
-                },
-                Err(e) => ParseConfigResponse {
-                    success: false,
-                    parsed: None,
-                    error: Some(format!("JSON parse error: {}", e)),
-                },
-            }
-        }
-        "yaml" => {
-            match serde_yaml::from_str::<Value>(&req.content) {
-                Ok(val) => ParseConfigResponse {
-                    success: true,
-                    parsed: Some(val),
-                    error: None,
-                },
-                Err(e) => ParseConfigResponse {
-                    success: false,
-                    parsed: None,
-                    error: Some(format!("YAML parse error: {}", e)),
-                },
-            }
-        }
+        "toml" => match toml::from_str::<Value>(&req.content) {
+            Ok(val) => ParseConfigResponse {
+                success: true,
+                parsed: Some(val),
+                error: None,
+            },
+            Err(e) => ParseConfigResponse {
+                success: false,
+                parsed: None,
+                error: Some(format!("TOML parse error: {}", e)),
+            },
+        },
+        "json" => match serde_json::from_str::<Value>(&req.content) {
+            Ok(val) => ParseConfigResponse {
+                success: true,
+                parsed: Some(val),
+                error: None,
+            },
+            Err(e) => ParseConfigResponse {
+                success: false,
+                parsed: None,
+                error: Some(format!("JSON parse error: {}", e)),
+            },
+        },
+        "yaml" => match serde_yaml::from_str::<Value>(&req.content) {
+            Ok(val) => ParseConfigResponse {
+                success: true,
+                parsed: Some(val),
+                error: None,
+            },
+            Err(e) => ParseConfigResponse {
+                success: false,
+                parsed: None,
+                error: Some(format!("YAML parse error: {}", e)),
+            },
+        },
         _ => ParseConfigResponse {
             success: false,
             parsed: None,
-            error: Some(format!("Unsupported format: {}. Use 'toml', 'json', or 'yaml'", req.format)),
+            error: Some(format!(
+                "Unsupported format: {}. Use 'toml', 'json', or 'yaml'",
+                req.format
+            )),
         },
     };
 
@@ -114,9 +105,7 @@ pub async fn parse_config(
         (status = 400, description = "Invalid request", body = GenerateSpecResponse)
     )
 )]
-pub async fn generate_spec(
-    Json(req): Json<GenerateSpecRequest>,
-) -> Json<GenerateSpecResponse> {
+pub async fn generate_spec(Json(req): Json<GenerateSpecRequest>) -> Json<GenerateSpecResponse> {
     let mut properties = serde_json::Map::new();
     let mut required = Vec::new();
 

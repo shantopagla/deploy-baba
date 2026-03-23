@@ -90,10 +90,7 @@ pub struct Subnet {
 
 impl Subnet {
     /// Create a new subnet.
-    pub fn new(
-        cidr: impl Into<String>,
-        availability_zone: impl Into<String>,
-    ) -> Self {
+    pub fn new(cidr: impl Into<String>, availability_zone: impl Into<String>) -> Self {
         Self {
             cidr: cidr.into(),
             availability_zone: availability_zone.into(),
@@ -289,7 +286,9 @@ mod tests {
     fn test_security_group_add_rules() {
         let ingress = IngressRule::new("tcp", 443, 443, "0.0.0.0/0");
         let egress = EgressRule::new("tcp", 443, 443, "0.0.0.0/0");
-        let sg = SecurityGroup::new("app-sg", "Test").add_ingress(ingress).add_egress(egress);
+        let sg = SecurityGroup::new("app-sg", "Test")
+            .add_ingress(ingress)
+            .add_egress(egress);
 
         assert_eq!(sg.ingress.len(), 1);
         assert_eq!(sg.egress.len(), 1);

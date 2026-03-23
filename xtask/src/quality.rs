@@ -21,10 +21,18 @@ pub enum QualityAction {
 pub async fn execute(action: QualityAction) -> anyhow::Result<()> {
     match action {
         QualityAction::All => run_all_gates().await,
-        QualityAction::Format => crate::build::execute(crate::build::BuildAction::Format { check: true }).await,
-        QualityAction::Lint => crate::build::execute(crate::build::BuildAction::Lint { fix: false }).await,
-        QualityAction::Test => crate::test::execute(crate::test::TestAction::All { crate_name: None }).await,
-        QualityAction::Coverage => crate::coverage::execute(crate::coverage::CoverageAction::Check { threshold: 80 }).await,
+        QualityAction::Format => {
+            crate::build::execute(crate::build::BuildAction::Format { check: true }).await
+        }
+        QualityAction::Lint => {
+            crate::build::execute(crate::build::BuildAction::Lint { fix: false }).await
+        }
+        QualityAction::Test => {
+            crate::test::execute(crate::test::TestAction::All { crate_name: None }).await
+        }
+        QualityAction::Coverage => {
+            crate::coverage::execute(crate::coverage::CoverageAction::Floors).await
+        }
     }
 }
 
@@ -48,7 +56,17 @@ async fn run_all_gates() -> anyhow::Result<()> {
 
     // 4. Coverage
     println!("📊 Step 4: Coverage check");
-    crate::coverage::execute(crate::coverage::CoverageAction::Check { threshold: 80 }).await?;
+    crate::coverage::execute(crate::coverage::CoverageAction::Floors).await?;
+    println!();
+
+    // 5. Security audit
+    println!("🔒 Step 5: Security audit");
+    let audit_status = std::process::Command::new("cargo")
+        .args(["audit"])
+        .status()?;
+    if !audit_status.success() {
+        return Err(anyhow::anyhow!("Security audit failed"));
+    }
     println!();
 
     println!("✅ All quality gates passed!");

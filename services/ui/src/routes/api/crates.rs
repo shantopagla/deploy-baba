@@ -1,8 +1,4 @@
-use axum::{
-    extract::Path,
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::Path, routing::get, Json, Router};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -18,7 +14,8 @@ fn get_all_crates() -> Vec<CrateInfo> {
         CrateInfo {
             name: "config-core".to_string(),
             version: "0.1.0".to_string(),
-            description: "Universal zero-cost trait abstractions for configuration parsing".to_string(),
+            description: "Universal zero-cost trait abstractions for configuration parsing"
+                .to_string(),
             traits: vec!["ConfigParser".to_string(), "Validatable".to_string()],
         },
         CrateInfo {
@@ -42,13 +39,15 @@ fn get_all_crates() -> Vec<CrateInfo> {
         CrateInfo {
             name: "api-core".to_string(),
             version: "0.1.0".to_string(),
-            description: "Universal zero-cost trait abstractions for API specification generation".to_string(),
+            description: "Universal zero-cost trait abstractions for API specification generation"
+                .to_string(),
             traits: vec!["SpecGenerator".to_string(), "Validatable".to_string()],
         },
         CrateInfo {
             name: "api-openapi".to_string(),
             version: "0.1.0".to_string(),
-            description: "OpenAPI 3.0 specification generator implementing api-core traits".to_string(),
+            description: "OpenAPI 3.0 specification generator implementing api-core traits"
+                .to_string(),
             traits: vec!["SpecGenerator".to_string(), "OpenApiCompat".to_string()],
         },
         CrateInfo {
@@ -60,19 +59,23 @@ fn get_all_crates() -> Vec<CrateInfo> {
         CrateInfo {
             name: "api-grpc".to_string(),
             version: "0.1.0".to_string(),
-            description: "gRPC/Protocol Buffer schema generator implementing api-core traits".to_string(),
+            description: "gRPC/Protocol Buffer schema generator implementing api-core traits"
+                .to_string(),
             traits: vec!["SpecGenerator".to_string(), "GrpcCompat".to_string()],
         },
         CrateInfo {
             name: "api-merger".to_string(),
             version: "0.1.0".to_string(),
-            description: "Multi-format API specification merging with conflict resolution".to_string(),
+            description: "Multi-format API specification merging with conflict resolution"
+                .to_string(),
             traits: vec!["SpecMerger".to_string(), "ConflictResolver".to_string()],
         },
         CrateInfo {
             name: "infra-types".to_string(),
             version: "0.1.0".to_string(),
-            description: "Cloud-agnostic infrastructure type definitions with SQLite + S3 backup support".to_string(),
+            description:
+                "Cloud-agnostic infrastructure type definitions with SQLite + S3 backup support"
+                    .to_string(),
             traits: vec!["InfraType".to_string(), "Persistent".to_string()],
         },
     ]

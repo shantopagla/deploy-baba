@@ -310,9 +310,7 @@ pub fn generate_openapi_json<T: OpenApiSchema>() -> Result<String, OpenApiSpecEr
 ///
 /// This function merges multiple OpenAPI specifications into a single unified spec.
 /// It will fail if duplicate paths or schemas are found across specs.
-pub fn merge_openapi_specs(
-    specs: Vec<utoipa::openapi::OpenApi>,
-) -> Result<OpenApiSpec, SpecError> {
+pub fn merge_openapi_specs(specs: Vec<utoipa::openapi::OpenApi>) -> Result<OpenApiSpec, SpecError> {
     if specs.is_empty() {
         return Err(SpecError::MergeError(
             "Cannot merge empty specification list".to_string(),

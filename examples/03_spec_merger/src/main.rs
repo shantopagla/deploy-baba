@@ -20,6 +20,7 @@ struct User {
     email: String,
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     get,
     path = "/users",
@@ -31,6 +32,7 @@ async fn get_users() -> Vec<User> {
     vec![]
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     post,
     path = "/users",
@@ -48,10 +50,7 @@ async fn create_user(_user: User) -> User {
 }
 
 #[derive(OpenApi)]
-#[openapi(
-    paths(get_users, create_user),
-    components(schemas(User))
-)]
+#[openapi(paths(get_users, create_user), components(schemas(User)))]
 struct UserServiceSpec;
 
 impl api_openapi::OpenApiSchema for UserServiceSpec {
@@ -70,6 +69,7 @@ struct Product {
     price: f64,
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     get,
     path = "/products",
@@ -81,6 +81,7 @@ async fn get_products() -> Vec<Product> {
     vec![]
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     post,
     path = "/products",
@@ -98,10 +99,7 @@ async fn create_product(_product: Product) -> Product {
 }
 
 #[derive(OpenApi)]
-#[openapi(
-    paths(get_products, create_product),
-    components(schemas(Product))
-)]
+#[openapi(paths(get_products, create_product), components(schemas(Product)))]
 struct ProductServiceSpec;
 
 impl api_openapi::OpenApiSchema for ProductServiceSpec {
@@ -119,6 +117,7 @@ struct Order {
     product_id: u32,
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     get,
     path = "/orders",
@@ -131,10 +130,7 @@ async fn get_orders() -> Vec<Order> {
 }
 
 #[derive(OpenApi)]
-#[openapi(
-    paths(get_orders),
-    components(schemas(Order))
-)]
+#[openapi(paths(get_orders), components(schemas(Order)))]
 struct OrderServiceSpec;
 
 impl api_openapi::OpenApiSchema for OrderServiceSpec {
@@ -155,7 +151,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let order_spec = OrderServiceSpec::openapi();
 
     println!("✓ User Service: {} paths", user_spec.paths.paths.len());
-    println!("✓ Product Service: {} paths", product_spec.paths.paths.len());
+    println!(
+        "✓ Product Service: {} paths",
+        product_spec.paths.paths.len()
+    );
     println!("✓ Order Service: {} paths\n", order_spec.paths.paths.len());
 
     // Wrap in unified API spec
@@ -219,10 +218,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Merge with FirstWins Strategy");
     println!("--------------------------------");
 
-    let specs_for_first_wins = vec![
-        user_spec_unified.clone(),
-        product_spec_unified.clone(),
-    ];
+    let specs_for_first_wins = vec![user_spec_unified.clone(), product_spec_unified.clone()];
 
     let merger_first_wins = SpecificationMerger::new(SpecFormat::OpenApi)
         .with_conflict_resolution(ConflictResolutionStrategy::FirstWins)
@@ -231,7 +227,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match merger_first_wins.merge_specifications(specs_for_first_wins) {
         Ok(merged) => {
             println!("✓ Merge with FirstWins strategy successful!");
-            println!("  Resolution strategy: {}", merged.metadata.resolution_strategy);
+            println!(
+                "  Resolution strategy: {}",
+                merged.metadata.resolution_strategy
+            );
             println!("  Validated: {}\n", merged.metadata.validated);
         }
         Err(e) => println!("✗ Merge failed: {}\n", e),
@@ -241,10 +240,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("4. Merge with LastWins Strategy");
     println!("-------------------------------");
 
-    let specs_for_last_wins = vec![
-        product_spec_unified.clone(),
-        order_spec_unified.clone(),
-    ];
+    let specs_for_last_wins = vec![product_spec_unified.clone(), order_spec_unified.clone()];
 
     let merger_last_wins = SpecificationMerger::new(SpecFormat::OpenApi)
         .with_conflict_resolution(ConflictResolutionStrategy::LastWins);
@@ -252,8 +248,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match merger_last_wins.merge_specifications(specs_for_last_wins) {
         Ok(merged) => {
             println!("✓ Merge with LastWins strategy successful!");
-            println!("  Resolution strategy: {}", merged.metadata.resolution_strategy);
-            println!("  Conflicts encountered: {}\n", merged.metadata.conflicts.len());
+            println!(
+                "  Resolution strategy: {}",
+                merged.metadata.resolution_strategy
+            );
+            println!(
+                "  Conflicts encountered: {}\n",
+                merged.metadata.conflicts.len()
+            );
         }
         Err(e) => println!("✗ Merge failed: {}\n", e),
     }
@@ -262,11 +264,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("5. Examining Merged Specification");
     println!("--------------------------------");
 
-    let final_merge = vec![
-        user_spec_unified,
-        product_spec_unified,
-        order_spec_unified,
-    ];
+    let final_merge = vec![user_spec_unified, product_spec_unified, order_spec_unified];
 
     let merger_final = SpecificationMerger::new(SpecFormat::OpenApi)
         .with_conflict_resolution(ConflictResolutionStrategy::FailOnConflict);

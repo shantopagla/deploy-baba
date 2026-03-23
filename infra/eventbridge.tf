@@ -3,7 +3,7 @@ resource "aws_cloudwatch_event_rule" "backup_schedule" {
   name                = "${local.lambda_function_name}-backup-schedule"
   description         = "Trigger database backups on a schedule"
   schedule_expression = var.backup_schedule
-  is_enabled          = true
+  state               = "ENABLED"
 
   tags = {
     Name = "${local.lambda_function_name}-backup-schedule"

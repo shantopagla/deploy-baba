@@ -29,14 +29,10 @@ resource "aws_efs_file_system" "baba_db" {
 
 # EFS Mount Targets in default VPC (one per availability zone)
 resource "aws_efs_mount_target" "baba_db" {
-  count            = length(data.aws_availability_zones.available.names)
-  file_system_id   = aws_efs_file_system.baba_db.id
-  subnet_id        = data.aws_subnets.default.ids[count.index]
-  security_groups  = [aws_security_group.efs.id]
-
-  tags = {
-    Name = "${local.lambda_function_name}-mount-target-${data.aws_availability_zones.available.names[count.index]}"
-  }
+  count          = length(data.aws_availability_zones.available.names)
+  file_system_id = aws_efs_file_system.baba_db.id
+  subnet_id      = data.aws_subnets.default.ids[count.index]
+  security_groups = [aws_security_group.efs.id]
 }
 
 # EFS Access Point for Lambda with specific mount path and POSIX user
@@ -70,13 +66,6 @@ resource "aws_security_group" "efs" {
   description = "Security group for EFS access"
   vpc_id      = data.aws_vpc.default.id
 
-  ingress {
-    from_port       = 2049
-    to_port         = 2049
-    protocol        = "tcp"
-    security_groups = [aws_security_group.lambda_efs.id]
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -96,13 +85,6 @@ resource "aws_security_group" "lambda_efs" {
   vpc_id      = data.aws_vpc.default.id
 
   egress {
-    from_port   = 2049
-    to_port     = 2049
-    protocol    = "tcp"
-    security_groups = [aws_security_group.efs.id]
-  }
-
-  egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -112,4 +94,23 @@ resource "aws_security_group" "lambda_efs" {
   tags = {
     Name = "${local.lambda_function_name}-lambda-efs-sg"
   }
+}
+
+# Cross-SG rules extracted to break the cycle
+resource "aws_security_group_rule" "efs_ingress_from_lambda" {
+  type                     = "ingress"
+  from_port                = 2049
+  to_port                  = 2049
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.efs.id
+  source_security_group_id = aws_security_group.lambda_efs.id
+}
+
+resource "aws_security_group_rule" "lambda_egress_to_efs" {
+  type                     = "egress"
+  from_port                = 2049
+  to_port                  = 2049
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.lambda_efs.id
+  source_security_group_id = aws_security_group.efs.id
 }

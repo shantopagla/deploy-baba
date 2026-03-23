@@ -41,9 +41,11 @@ pub enum DatabaseAction {
 pub async fn execute(action: DatabaseAction) -> anyhow::Result<()> {
     match action {
         DatabaseAction::Backup { path, profile } => backup::backup_database(path, profile).await,
-        DatabaseAction::Restore { version, path, profile } => {
-            restore::restore_database(version, path, profile).await
-        }
+        DatabaseAction::Restore {
+            version,
+            path,
+            profile,
+        } => restore::restore_database(version, path, profile).await,
         DatabaseAction::ListBackups { profile } => list_backups(profile).await,
     }
 }

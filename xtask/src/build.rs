@@ -42,7 +42,7 @@ async fn format_code(check: bool) -> anyhow::Result<()> {
     if check {
         println!("🎨 Checking code formatting...");
         let status = Command::new("cargo")
-            .args(&["fmt", "--all", "--check"])
+            .args(["fmt", "--all", "--check"])
             .status()?;
         if !status.success() {
             return Err(anyhow::anyhow!("Code formatting check failed"));
@@ -50,9 +50,7 @@ async fn format_code(check: bool) -> anyhow::Result<()> {
         println!("✅ Code formatting is correct");
     } else {
         println!("🎨 Formatting code...");
-        let status = Command::new("cargo")
-            .args(&["fmt", "--all"])
-            .status()?;
+        let status = Command::new("cargo").args(["fmt", "--all"]).status()?;
         if !status.success() {
             return Err(anyhow::anyhow!("Code formatting failed"));
         }
@@ -64,12 +62,12 @@ async fn format_code(check: bool) -> anyhow::Result<()> {
 async fn lint_code(fix: bool) -> anyhow::Result<()> {
     println!("🔍 Running clippy lints...");
     let mut cmd = Command::new("cargo");
-    cmd.args(&["clippy", "--workspace", "--all-targets", "--all-features"]);
+    cmd.args(["clippy", "--workspace", "--all-targets", "--all-features"]);
 
     if fix {
-        cmd.args(&["--fix", "--allow-dirty", "--allow-staged"]);
+        cmd.args(["--fix", "--allow-dirty", "--allow-staged"]);
     } else {
-        cmd.args(&["--", "-D", "warnings"]);
+        cmd.args(["--", "-D", "warnings"]);
     }
 
     let status = cmd.status()?;
@@ -91,14 +89,14 @@ async fn compile_code(release: bool, features: Option<String>) -> anyhow::Result
     );
 
     let mut cmd = Command::new("cargo");
-    cmd.args(&["build", "--workspace"]);
+    cmd.args(["build", "--workspace"]);
 
     if release {
         cmd.arg("--release");
     }
 
     if let Some(f) = features {
-        cmd.args(&["--features", &f]);
+        cmd.args(["--features", &f]);
     }
 
     let status = cmd.status()?;

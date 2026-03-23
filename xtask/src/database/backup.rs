@@ -16,8 +16,8 @@ pub async fn backup_database(path: Option<String>, profile: Option<String>) -> a
     }
 
     // Read database file
-    let mut db_file = File::open(&db_path)
-        .map_err(|e| anyhow::anyhow!("Failed to open database file: {}", e))?;
+    let mut db_file =
+        File::open(&db_path).map_err(|e| anyhow::anyhow!("Failed to open database file: {}", e))?;
 
     let mut db_data = Vec::new();
     db_file
@@ -38,7 +38,7 @@ pub async fn backup_database(path: Option<String>, profile: Option<String>) -> a
         .duration_since(UNIX_EPOCH)
         .map_err(|e| anyhow::anyhow!("Failed to get current time: {}", e))?
         .as_secs();
-    
+
     let backup_key = format!("db-backups/app-{}.db.gz", timestamp);
 
     client
