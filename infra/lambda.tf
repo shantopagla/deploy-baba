@@ -18,7 +18,7 @@ resource "aws_lambda_function" "baba" {
   memory_size         = var.lambda_memory
   timeout             = var.lambda_timeout
   architectures       = ["arm64"]
-  source_code_hash    = filebase64sha256(var.lambda_code_path)
+  source_code_hash    = fileexists(var.lambda_code_path) ? filebase64sha256(var.lambda_code_path) : null
 
   # Environment variables passed to the Lambda function
   environment {
@@ -44,9 +44,10 @@ resource "aws_lambda_function" "baba" {
   depends_on = [
     aws_cloudwatch_log_group.lambda,
     aws_iam_role_policy_attachment.lambda_logs,
-    aws_iam_role_policy_attachment.lambda_efs,
-    aws_iam_role_policy_attachment.lambda_s3,
-    aws_iam_role_policy_attachment.lambda_ssm,
+    aws_iam_role_policy_attachment.lambda_vpc,
+    aws_iam_role_policy.lambda_efs,
+    aws_iam_role_policy.lambda_s3,
+    aws_iam_role_policy.lambda_ssm,
   ]
 
   tags = {
@@ -56,23 +57,26 @@ resource "aws_lambda_function" "baba" {
 
 # Lambda Function URL for direct HTTPS invocation (no API Gateway)
 resource "aws_lambda_function_url" "baba" {
-  function_name          = aws_lambda_function.baba.function_name
-  authorization_type    = "NONE"
-  cors {
-    allow_origins = ["*"]
-    allow_methods = ["GET", "POST", "OPTIONS"]
-    allow_headers = ["Content-Type"]
-    expose_headers = ["Content-Type"]
-    max_age       = 3600
-  }
+  function_name      = aws_lambda_function.baba.function_name
+  authorization_type = "AWS_IAM"
 
   depends_on = [aws_lambda_function.baba]
 }
 
-# Lambda permission for invocation via Function URL
-resource "aws_lambda_permission" "function_url" {
-  statement_id       = "AllowPublicInvoke"
-  action             = "lambda:InvokeFunctionUrl"
-  function_name      = aws_lambda_function.baba.function_name
-  principal          = "*"
+# Lambda permission — CloudFront OAC only (replaces public principal = "*")
+resource "aws_lambda_permission" "cloudfront" {
+  statement_id  = "AllowCloudFrontInvoke"
+  action        = "lambda:InvokeFunctionUrl"
+  function_name = aws_lambda_function.baba.function_name
+  principal     = "cloudfront.amazonaws.com"
+  source_arn    = aws_cloudfront_distribution.main.arn
 }
+
+resource "aws_lambda_permission" "cloudfront_invoke" {
+  statement_id  = "AllowCloudFrontInvokeFunction"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.baba.function_name
+  principal     = "cloudfront.amazonaws.com"
+  source_arn    = aws_cloudfront_distribution.main.arn
+}
+

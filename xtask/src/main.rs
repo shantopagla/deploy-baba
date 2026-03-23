@@ -110,7 +110,7 @@ async fn publish(environment: String, dry_run: bool) -> anyhow::Result<()> {
 
     // Deploy
     if !dry_run {
-        deploy::execute(deploy::DeployAction::Lambda { function: None }).await?;
+        deploy::execute(deploy::DeployAction::Lambda { function: None, profile: None }).await?;
         println!("✅ Published successfully");
     } else {
         println!("✅ Publish validated (dry run)");

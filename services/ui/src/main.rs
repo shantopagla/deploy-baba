@@ -1,6 +1,5 @@
 use anyhow::Result;
 
-mod error;
 mod openapi;
 mod router;
 mod routes;

@@ -1,3 +1,9 @@
+> **ARCHIVED** — This monolith has been converted to the modular plan system.
+> See `plans/INDEX.md` for the current plan. This file is kept as historical reference.
+> Archived: 2026-03-23
+
+---
+
 # deploy-baba — Portfolio Repository Plan (Revised)
 **GitHub:** `shantopagla/deploy-baba`
 **Author:** Shanto | **Revised:** 2026-03-10
@@ -472,6 +478,9 @@ Lambda Function URL replaces API Gateway entirely — simpler, cheaper, one fewe
 resource to manage in Terraform.
 
 ```
+  HTTPS Request ──► CloudFront ──► Lambda Function URL ──► Lambda
+  (sislam.com)      (cache: off)   (origin, HTTPS-only)
+
                     ┌──────────────────────────────┐
   HTTPS Request ──► │  Lambda Function URL          │  Free HTTPS endpoint
   (browser/curl)    │  (auth: NONE, CORS: enabled)  │  No API Gateway needed
@@ -1116,6 +1125,9 @@ infra-types:    75%
 - [ ] `just infra-bootstrap` → `just infra-apply` → `just deploy` works end-to-end
 - [ ] `just ui-open` opens the live Function URL in browser
 - [ ] `just db-backup` and `just db-restore` tested against deployed EFS
+- [ ] `infra/cdn.tf` — CloudFront distribution + Route53 records for sislam.com
+- [ ] Verify ACM cert covers sislam.com (or create new cert with DNS validation)
+- [ ] `https://sislam.com` and `https://www.sislam.com` resolve and serve the portfolio
 
 ### Phase 7 — Examples + Docs (1 day)
 - [ ] 4 standalone examples, each <100 lines
@@ -1168,3 +1180,193 @@ just ui-open deploy-baba            # opens the live Function URL in browser
 
 *Plan revised to use justfile as sole developer interface. xtask is implementation only.*
 *SQLite + S3 replaces PostgreSQL. Lambda + API Gateway recommended for near-zero cost.*
+
+---
+
+## Deployment Drift Log — Phase 6 (2026-03-18)
+
+Recorded during the first real `terraform init` + `plan` + `apply` run. All items below represent gaps between the plan and actual state, fixed in-session unless noted.
+
+### 1. Backend bootstrap not automated: S3 bucket and DynamoDB table missing
+
+**Plan says:** `just infra-bootstrap` creates S3 state bucket + SSM sentinel.
+**Reality:** `infra-bootstrap` was not yet implemented in xtask. The S3 bucket (`deploy-baba-tfstate`) and DynamoDB lock table (`terraform-lock`) were absent, causing `terraform init` to fail immediately.
+
+**Fix applied:** Manually bootstrapped via AWS CLI:
+```bash
+aws s3api create-bucket --bucket deploy-baba-tfstate --region us-east-1
+aws s3api put-bucket-versioning --bucket deploy-baba-tfstate --versioning-configuration Status=Enabled
+aws s3api put-bucket-encryption ...  # AES256
+aws s3api put-public-access-block ... # block all public access
+aws dynamodb create-table --table-name terraform-lock \
+  --attribute-definitions AttributeName=LockID,AttributeType=S \
+  --key-schema AttributeName=LockID,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+```
+
+**Required plan update:** `xtask/src/infra/bootstrap.rs` must also create the DynamoDB lock table (it was only mentioned for S3 in the plan). The `just infra-bootstrap` command must be implemented and tested before any new developer can run `just infra-apply`.
+
+**Also:** The plan says bucket name is `deploy-baba-tfstate-<account-id>` but `infra/main.tf` uses `deploy-baba-tfstate` (no suffix). These must be kept in sync.
+
+---
+
+### 2. Security group cycle in `infra/efs.tf`
+
+**Plan says:** EFS SG allows NFS ingress from Lambda SG; Lambda SG egresses to EFS SG.
+**Reality:** Both `aws_security_group.efs` and `aws_security_group.lambda_efs` referenced each other inline (ingress/egress blocks), creating a Terraform cycle error:
+`Error: Cycle: aws_security_group.efs, aws_security_group.lambda_efs`
+
+**Fix applied:** Extracted the cross-SG rules into separate resources:
+```hcl
+resource "aws_security_group_rule" "efs_ingress_from_lambda" { ... }
+resource "aws_security_group_rule" "lambda_egress_to_efs"    { ... }
+```
+
+**Required plan update:** Phase 6 checklist should note: *"Security groups for EFS/Lambda must use separate `aws_security_group_rule` resources for cross-references (inline rules create a cycle)."*
+
+---
+
+### 3. `aws_efs_mount_target` does not support `tags`
+
+**Reality:** The AWS provider rejects `tags` on `aws_efs_mount_target`. Terraform error:
+`Error: Argument named "tags" is not expected here`
+
+**Fix applied:** Removed `tags` block from `aws_efs_mount_target.baba_db`.
+
+---
+
+### 4. `lambda.tf` `depends_on` referenced non-existent `aws_iam_role_policy_attachment` resources
+
+**Reality:** `lambda.tf` listed `aws_iam_role_policy_attachment.lambda_efs/s3/ssm` in `depends_on`, but `iam.tf` defines those as `aws_iam_role_policy` (inline policies, not attachments). Also missing `lambda_vpc` from the dependency list.
+
+**Fix applied:** Updated `depends_on` to:
+```hcl
+depends_on = [
+  aws_cloudwatch_log_group.lambda,
+  aws_iam_role_policy_attachment.lambda_logs,
+  aws_iam_role_policy_attachment.lambda_vpc,
+  aws_iam_role_policy.lambda_efs,
+  aws_iam_role_policy.lambda_s3,
+  aws_iam_role_policy.lambda_ssm,
+]
+```
+
+---
+
+### 5. Lambda zip (`build/lambda.zip`) missing — `filebase64sha256` fails at plan time
+
+**Plan says:** `just deploy` runs `cargo lambda build --release` and produces the zip.
+**Reality:** `infra/variables.tf` defaults `lambda_code_path = "./build/lambda.zip"`. Terraform's `filebase64sha256()` is evaluated at **plan time**, so `terraform plan` fails if the file doesn't exist — before any deploy has ever run.
+
+**Fix required (not yet applied):** Two options:
+- **Option A (preferred):** Build the Lambda zip as a prerequisite before `terraform plan/apply`. Add a `just lambda-build` recipe that runs `cargo lambda build --release --target aarch64-unknown-linux-gnu` and packages the zip to `infra/build/lambda.zip`. Wire it into `just infra-apply` as a dependency.
+- **Option B:** Use `try()` or a `null_resource`/`external` data source to make the hash optional on first run, though this is fragile.
+
+**cargo-lambda not installed:** The tool is listed in the new-developer setup (`cargo install cargo-lambda`) but was not present in the current environment. Must be installed before `just deploy` can work.
+
+**Required plan update:** Phase 6 checklist must include:
+- `cargo install cargo-lambda` (add to bootstrap docs / dev-setup)
+- `just lambda-build` — new justfile recipe wrapping `cargo lambda build`
+- `just infra-apply` must depend on `just lambda-build` (or at minimum document the prerequisite)
+
+---
+
+### 6. Terraform provider deprecation warnings (non-blocking, will become errors)
+
+| File | Warning | Fix needed |
+|------|---------|-----------|
+| `infra/eventbridge.tf:6` | `is_enabled` deprecated — use `state` | Replace `is_enabled = true` with `state = "ENABLED"` |
+| `infra/s3.tf:41` | `aws_s3_bucket_lifecycle_configuration` rule missing `filter` block | Add `filter {}` to each lifecycle rule |
+
+These are warnings in provider v5.100 but will become errors in a future version. Should be fixed before next plan/apply.
+
+---
+
+### Phase 6 Checklist (Updated)
+
+- [x] `infra/cdn.tf` — CloudFront distribution + Route53 records
+- [x] `infra/outputs.tf` — cloudfront_distribution_id, cloudfront_domain_name, site_url added
+- [ ] **Bootstrap prerequisite:** Implement `xtask/src/infra/bootstrap.rs` to create S3 bucket + DynamoDB table + SSM sentinel atomically
+- [ ] **Lambda build prerequisite:** Add `just lambda-build` recipe; wire into `just infra-apply`
+- [ ] **Install `cargo-lambda`:** Add to dev-setup docs and bootstrap step
+- [ ] **Fix `eventbridge.tf`:** Replace `is_enabled` with `state = "ENABLED"`
+- [ ] **Fix `s3.tf` lifecycle rules:** Add `filter {}` block to each rule
+- [ ] `terraform plan` clean (zero errors, zero warnings)
+- [ ] `terraform apply` — 28 resources created
+- [ ] CloudFront propagates (~5–15 min)
+- [ ] `curl -I https://sislam.com` → 200
+- [ ] `curl -I https://www.sislam.com` → 200
+- [ ] `curl https://sislam.com/health` → `{"status":"ok",...}`
+
+---
+
+## xtask / justfile Drift Log — Phase 6 (2026-03-18)
+
+Audit of gaps between `justfile` recipes and their `cargo xtask` implementations.
+All items below have been fixed in this session.
+
+### 1. `infra/bootstrap.rs` — Wrong bucket name, missing DynamoDB, missing security hardening
+
+| Field | Was | Fixed To |
+|-------|-----|----------|
+| S3 bucket name | `deploy-baba-terraform-state` | `deploy-baba-tfstate` |
+| DynamoDB lock table | **missing** | `terraform-lock` (PAY_PER_REQUEST, LockID hash key) |
+| S3 encryption | **missing** | AES256 server-side encryption |
+| S3 public access block | **missing** | `block_public_acls/policy`, `ignore_public_acls`, `restrict_public_buckets = true` |
+| SSM sentinel value | `"bootstrap-complete"` | `"deploy-baba-configured"` |
+| terraform init after bootstrap | **missing** | Added — calls `terraform -chdir=infra init` after all AWS resources |
+
+**Just recipe:** `just infra-bootstrap PROFILE REGION` → `cargo xtask infra bootstrap --profile --region`
+
+### 2. `infra/terraform.rs` — Wrong directory handling, no profile propagation
+
+| Issue | Was | Fixed |
+|-------|-----|-------|
+| Dir passed as positional arg | `cmd.arg(dir)` (invalid for terraform) | `cmd.arg(format!("-chdir={}", dir))` before subcommand |
+| Default dir | None (ran from CWD) | Defaults to `"infra"` |
+| AWS profile for terraform | Not set | `cmd.env("AWS_PROFILE", profile)` on subprocess |
+| `terraform output` | No `-json` flag | Added `-json` for machine-readable output |
+
+### 3. `infra/mod.rs` — Missing `--profile` and `--region` args on terraform actions
+
+`InfraAction::Plan/Apply/Destroy/Output` all had no `--profile` argument, but
+`justfile` recipes call them with `--profile {{PROFILE}}`. Added `profile: Option<String>`
+to all four actions. Added `region: Option<String>` to `Bootstrap`.
+
+### 4. `deploy/lambda.rs` — Wrong build command, zip path, and function name
+
+| Field | Was | Fixed To |
+|-------|-----|----------|
+| Build command | `cargo build --release` | `cargo lambda build --release --package deploy-baba-ui --target aarch64-unknown-linux-gnu` |
+| Zip path | `lambda-deployment.zip` (CWD) | `infra/build/lambda.zip` |
+| Zip contents | `target/release/` directory | `target/lambda/deploy-baba-ui/bootstrap` (single binary) |
+| Default function name | `deploy-baba-api` | `deploy-baba-prod` |
+| AWS profile | Hardcoded `None` | Accepts `--profile` and passes to `create_aws_config` |
+
+### 5. `deploy/mod.rs` — Lambda action missing `--profile`
+
+Added `profile: Option<String>` to `DeployAction::Lambda`.
+Fixed call in `main.rs` that hardcoded `Lambda { function: None }` to include `profile: None`.
+
+### 6. `justfile` — Missing deployment recipes
+
+Added:
+- `lambda-build` — wraps `cargo lambda build` with correct package/target flags; sets `PATH` to include `~/.cargo/bin` for rustup-managed toolchains
+- `lambda-deploy PROFILE` — `aws-check` + `lambda-build` + `cargo xtask deploy lambda --profile`
+- `infra-verify DOMAIN` — curl verification of apex + www HTTPS and `/health` endpoint
+
+### 7. `Cargo.toml` (workspace) — Missing `aws-sdk-dynamodb`
+
+Added `aws-sdk-dynamodb = "1"` to `[workspace.dependencies]` and `xtask/Cargo.toml`.
+
+### Phase 6 xtask Checklist
+
+- [x] `xtask/src/infra/bootstrap.rs` — fixed bucket name, added DynamoDB, encryption, public-access-block, sentinel, terraform init
+- [x] `xtask/src/infra/terraform.rs` — fixed `-chdir`, default dir, AWS_PROFILE env var, `-json` on output
+- [x] `xtask/src/infra/mod.rs` — added `--profile` to Plan/Apply/Destroy/Output, `--region` to Bootstrap
+- [x] `xtask/src/deploy/lambda.rs` — fixed build command, zip path, function name, profile support
+- [x] `xtask/src/deploy/mod.rs` — added `--profile` to Lambda action
+- [x] `xtask/src/main.rs` — fixed `Lambda { function: None }` to include `profile: None`
+- [x] `justfile` — added `lambda-build`, `lambda-deploy`, `infra-verify`
+- [x] `Cargo.toml` — added `aws-sdk-dynamodb = "1"` to workspace
+- [x] `xtask` compiles clean (`cargo build --package xtask` ✅)

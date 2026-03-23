@@ -25,3 +25,4 @@ aws-sdk-lambda = { workspace = true }
 aws-sdk-ecs = { workspace = true }
 aws-sdk-ecr = { workspace = true }
 aws-sdk-efs = { workspace = true }
+aws-sdk-dynamodb = { workspace = true }

@@ -11,10 +11,7 @@ use crate::openapi::ApiDoc;
 use crate::routes;
 
 pub fn build() -> Router {
-    let api_routes = Router::new()
-        .nest("/crates", routes::api::crates::router())
-        .nest("/stack", routes::api::stack::router())
-        .nest("/demo", routes::api::demo::router());
+    let api_routes = routes::api::router();
 
     let openapi = ApiDoc::openapi();
 

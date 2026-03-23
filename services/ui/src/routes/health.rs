@@ -1,6 +1,5 @@
 use axum::Json;
 use serde::Serialize;
-use serde_json::json;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -18,9 +17,9 @@ pub struct HealthResponse {
         (status = 200, description = "Service is healthy", body = HealthResponse)
     )
 )]
-pub async fn get_health() -> Json<serde_json::Value> {
-    Json(json!({
-        "status": "ok",
-        "version": VERSION
-    }))
+pub async fn get_health() -> Json<HealthResponse> {
+    Json(HealthResponse {
+        status: "ok".into(),
+        version: VERSION.into(),
+    })
 }

@@ -13,9 +13,12 @@ pub mod lambda;
 pub enum DeployAction {
     /// Deploy to AWS Lambda
     Lambda {
-        /// Function name
+        /// Function name (default: deploy-baba-prod)
         #[arg(long)]
         function: Option<String>,
+        /// AWS profile
+        #[arg(long)]
+        profile: Option<String>,
     },
     /// Deploy to Amazon ECS
     Ecs {
@@ -48,7 +51,7 @@ pub enum DeployAction {
 
 pub async fn execute(action: DeployAction) -> anyhow::Result<()> {
     match action {
-        DeployAction::Lambda { function } => lambda::deploy(function).await,
+        DeployAction::Lambda { function, profile } => lambda::deploy(function, profile).await,
         DeployAction::Ecs { cluster, service } => ecs::deploy(cluster, service).await,
         DeployAction::Docker { platform, tag } => docker::build(&platform, tag).await,
         DeployAction::Push { image, profile } => ecr::push(&image, profile).await,

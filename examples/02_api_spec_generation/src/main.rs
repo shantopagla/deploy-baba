@@ -35,6 +35,7 @@ struct CreatePetRequest {
 // ============ OpenAPI Definition ============
 
 /// Mock OpenAPI handler functions (normally would be actual Axum handlers)
+#[allow(dead_code)]
 #[utoipa::path(
     get,
     path = "/pets",
@@ -46,6 +47,7 @@ async fn list_pets() -> Vec<Pet> {
     vec![]
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     post,
     path = "/pets",

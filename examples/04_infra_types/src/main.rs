@@ -10,8 +10,6 @@ use infra_types::{
     ObservabilityConfig, ProjectConfig, S3BackupConfig, ScalingConfig, ServiceConfig,
     SqliteConfig, Stack,
 };
-use serde_json::json;
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Infrastructure Types Example ===\n");
 

@@ -20,6 +20,7 @@ struct User {
     email: String,
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     get,
     path = "/users",
@@ -31,6 +32,7 @@ async fn get_users() -> Vec<User> {
     vec![]
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     post,
     path = "/users",
@@ -70,6 +72,7 @@ struct Product {
     price: f64,
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     get,
     path = "/products",
@@ -81,6 +84,7 @@ async fn get_products() -> Vec<Product> {
     vec![]
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     post,
     path = "/products",
@@ -119,6 +123,7 @@ struct Order {
     product_id: u32,
 }
 
+#[allow(dead_code)]
 #[utoipa::path(
     get,
     path = "/orders",

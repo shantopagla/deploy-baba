@@ -11,64 +11,88 @@ pub mod terraform;
 pub enum InfraAction {
     /// Initialize Terraform
     Init {
-        /// Working directory
+        /// Working directory (defaults to "infra")
         #[arg(long)]
         dir: Option<String>,
+        /// AWS profile
+        #[arg(long)]
+        profile: Option<String>,
     },
     /// Plan Terraform changes
     Plan {
-        /// Working directory
+        /// Working directory (defaults to "infra")
         #[arg(long)]
         dir: Option<String>,
+        /// AWS profile
+        #[arg(long)]
+        profile: Option<String>,
     },
     /// Apply Terraform changes
     Apply {
-        /// Working directory
+        /// Working directory (defaults to "infra")
         #[arg(long)]
         dir: Option<String>,
         /// Auto-approve changes
         #[arg(long)]
         auto_approve: bool,
+        /// AWS profile
+        #[arg(long)]
+        profile: Option<String>,
     },
     /// Destroy infrastructure
     Destroy {
-        /// Working directory
+        /// Working directory (defaults to "infra")
         #[arg(long)]
         dir: Option<String>,
         /// Auto-approve destruction
         #[arg(long)]
         auto_approve: bool,
+        /// AWS profile
+        #[arg(long)]
+        profile: Option<String>,
     },
     /// Get Terraform output values
     Output {
         /// Output name
         #[arg(long)]
         name: Option<String>,
-        /// Working directory
+        /// Working directory (defaults to "infra")
         #[arg(long)]
         dir: Option<String>,
+        /// AWS profile
+        #[arg(long)]
+        profile: Option<String>,
     },
-    /// Bootstrap AWS account (create state bucket, etc.)
+    /// Bootstrap AWS account (create state bucket + DynamoDB lock table, run terraform init)
     Bootstrap {
         /// AWS profile
         #[arg(long)]
         profile: Option<String>,
+        /// AWS region (default: us-east-1)
+        #[arg(long)]
+        region: Option<String>,
     },
 }
 
 pub async fn execute(action: InfraAction) -> anyhow::Result<()> {
     match action {
-        InfraAction::Init { dir } => terraform::run_terraform_init(dir).await,
-        InfraAction::Plan { dir } => terraform::run_terraform_plan(dir).await,
+        InfraAction::Init { dir, profile } => terraform::run_terraform_init(dir, profile).await,
+        InfraAction::Plan { dir, profile } => terraform::run_terraform_plan(dir, profile).await,
         InfraAction::Apply {
             dir,
             auto_approve,
-        } => terraform::run_terraform_apply(dir, auto_approve).await,
+            profile,
+        } => terraform::run_terraform_apply(dir, auto_approve, profile).await,
         InfraAction::Destroy {
             dir,
             auto_approve,
-        } => terraform::run_terraform_destroy(dir, auto_approve).await,
-        InfraAction::Output { name, dir } => terraform::run_terraform_output(name, dir).await,
-        InfraAction::Bootstrap { profile } => bootstrap::bootstrap_account(profile).await,
+            profile,
+        } => terraform::run_terraform_destroy(dir, auto_approve, profile).await,
+        InfraAction::Output { name, dir, profile } => {
+            terraform::run_terraform_output(name, dir, profile).await
+        }
+        InfraAction::Bootstrap { profile, region } => {
+            bootstrap::bootstrap_account(profile, region).await
+        }
     }
 }
