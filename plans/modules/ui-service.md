@@ -19,7 +19,7 @@ Key design: dual-mode entry point (Lambda + local TCP server) with no feature fl
 ## W-UI.2 Route Surface (also the OpenAPI spec)
 
 ```
-GET  /                         HTML portfolio landing page (Askama)
+GET  /                         Career timeline + capabilities dual-view — home page (→ W-RSM)
 GET  /docs                     RapiDoc interactive API explorer
 GET  /health                   {"status":"ok","version":"0.1.0","sha":"abcd1234"}
 
@@ -31,6 +31,11 @@ POST /api/demo/config/parse    Body: {format:"toml"|"yaml"|"json", content:"..."
                                → Parsed config object or validation errors
 POST /api/demo/spec/generate   Body: {fields:[{name,type,required},...], title:"..."}
                                → OpenAPI JSON for a synthetic schema
+
+GET  /api/jobs                 [{slug, company, title, dates, summary, tech_stack}, ...]
+GET  /api/jobs/{slug}          Job + detail bullets grouped by category
+GET  /api/competencies         [{slug, name, description, icon}, ...]
+GET  /api/competencies/{slug}  Competency + cross-referenced evidence items
 ```
 
 `/api/demo/*` invoke real crates at runtime — not mocks.
@@ -55,25 +60,16 @@ services/ui/src/
 ├── router.rs        # All route registration + OpenAPI spec assembly
 ├── openapi.rs       # #[derive(OpenApi)] root spec
 └── routes/
-    ├── landing.rs   # GET / → Askama template
-    ├── docs.rs      # GET /docs → RapiDoc (currently inline HTML)
+    ├── resume.rs    # GET / → Askama template (home page, → W-RSM)
     ├── health.rs    # GET /health → JSON
     └── api/
         ├── crates.rs  # crate metadata (hardcoded from workspace)
         ├── stack.rs   # parse stack.toml via config-toml
         └── demo.rs    # live config-parse + spec-generate
 templates/
-├── base.html        # Layout: nav, footer, Tailwind CDN
-└── landing.html     # Hero, architecture diagram, crate map, demos
+├── base.html        # Layout: nav ("Sharful Islam"), footer, Tailwind CDN
+└── resume.html      # Dual-view home page: timeline + capabilities toggle
 ```
-
-### Landing Page Sections
-1. **Hero** — name, tagline, GitHub badge, crates.io badges, live API link
-2. **Architecture** — three-layer diagram (HTML/SVG)
-3. **Crate Map** — interactive table: click → `/api/crates/{name}` inline
-4. **Live Demos** — config parser form + spec generator form
-5. **Zero-Cost Philosophy** — prose section
-6. **Deploy Your Own** — `git clone` → `just dev` → `just deploy` snippet
 
 ### Lambda Binary Size (target < 10 MB compressed)
 ```toml
@@ -85,7 +81,7 @@ strip          = true
 ```
 
 Askama templates: ~0 overhead (compile-time embedded).
-No database driver in the UI itself (SQLite is for app state, not portfolio).
+SQLite (rusqlite, bundled) added for resume data — see W-RSM for data model and migration runner.
 
 ### Not imported in UI service
 `api-graphql` and `api-grpc` — only OpenAPI demo is live. GraphQL/gRPC demonstrated

@@ -29,3 +29,8 @@ coverage/
 
 # Lambda build artifacts
 target/lambda/
+
+# SQLite database
+deploy-baba.db
+deploy-baba.db-wal
+deploy-baba.db-shm

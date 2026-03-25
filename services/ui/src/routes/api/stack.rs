@@ -1,4 +1,7 @@
 use axum::{routing::get, Json, Router};
+use std::sync::Arc;
+
+use crate::db::Db;
 
 const STACK_TOML: &str = include_str!("../../../../../stack.toml");
 
@@ -23,6 +26,6 @@ pub async fn get_stack() -> Result<Json<serde_json::Value>, (axum::http::StatusC
     }
 }
 
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<Db>> {
     Router::new().route("/", get(get_stack))
 }
