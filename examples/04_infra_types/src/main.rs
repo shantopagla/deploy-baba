@@ -201,7 +201,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("JSON size: {} bytes", stack_json.len());
     println!("TOML size: {} bytes", stack_toml.len());
     println!(
-        "Configuration keys: {}, {}, {}, {}, {}",
+        "Configuration keys: {}, {}, {}, observability, {}",
         if !stack.project.name.is_empty() {
             "project"
         } else {
@@ -216,11 +216,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "database"
         } else {
             ""
-        },
-        if stack.observability.metrics.is_some() {
-            "observability"
-        } else {
-            "observability"
         },
         if !stack.aws.profile.is_empty() {
             "aws"
