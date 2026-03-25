@@ -14,9 +14,8 @@ pub fn build(db: Arc<Db>) -> Router {
     let openapi = ApiDoc::openapi();
 
     Router::new()
-        .route("/", get(routes::landing::handler))
+        .route("/", get(routes::resume::handler))
         .route("/health", get(routes::health::get_health))
-        .route("/resume", get(routes::resume::handler))
         .nest("/api", api_routes)
         .route("/docs", get(docs_handler))
         .route(

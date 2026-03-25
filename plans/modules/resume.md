@@ -9,7 +9,7 @@
 Career timeline and functional/competency view for the portfolio — the first real
 data-backed feature in the UI service, fulfilling ADR-002 (SQLite on EFS).
 
-Two views behind a single `/resume` route:
+This is the **home page** (`/`). Two views behind a single route:
 - **Timeline** — reverse-chronological job list with expandable detail bullets
 - **Capabilities** — competency cards with cross-referenced evidence from jobs
 
@@ -48,7 +48,7 @@ services/ui/
 ├── src/
 │   ├── db.rs                            # Db struct, open(), migration runner
 │   └── routes/
-│       ├── resume.rs                    # GET /resume → Askama handler
+│       ├── resume.rs                    # GET / → Askama handler (home page)
 │       └── api/
 │           ├── jobs.rs                  # GET /api/jobs, GET /api/jobs/{slug}
 │           └── competencies.rs          # GET /api/competencies, GET /api/competencies/{slug}
@@ -61,7 +61,7 @@ services/ui/
 ## W-RSM.4 API Surface
 
 ```
-GET  /resume                              Dual-view HTML page (Askama server-rendered)
+GET  /                                    Dual-view HTML home page (Askama server-rendered)
 GET  /api/jobs                            [{slug, company, title, dates, summary, tech_stack}, ...]
 GET  /api/jobs/{slug}                     Job + detail bullets grouped by category
 GET  /api/competencies                    [{slug, name, description, icon}, ...]
@@ -69,7 +69,7 @@ GET  /api/competencies/{slug}             Competency + evidence items (highlight
 ```
 
 Query parameter: `GET /api/jobs?view=chronological` (functional view reserved for future).
-URL state: `/resume?view=capabilities` — updated via `history.pushState`.
+URL state: `/?view=capabilities` — updated via `history.pushState`.
 
 ---
 

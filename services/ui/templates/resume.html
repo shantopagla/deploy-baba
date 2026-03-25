@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Resume — Sharful Islam{% endblock %}
+{% block title %}Sharful Islam — Portfolio{% endblock %}
 
 {% block content %}
 <section class="bg-gradient-to-b from-gray-800 to-gray-900 py-12">
@@ -127,7 +127,7 @@ function setView(view) {
     document.querySelectorAll('.view-btn').forEach(btn => {
         btn.classList.toggle('active-view', btn.dataset.view === view);
     });
-    const url = view === 'capabilities' ? '/resume?view=capabilities' : '/resume';
+    const url = view === 'capabilities' ? '/?view=capabilities' : '/';
     history.pushState({}, '', url);
 }
 
