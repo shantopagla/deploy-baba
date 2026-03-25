@@ -1,11 +1,11 @@
 //! Infrastructure management module
 //!
-//! Wraps Terraform operations and bootstrap procedures
+//! Wraps OpenTofu operations and bootstrap procedures
 
 use clap::Subcommand;
 
 pub mod bootstrap;
-pub mod terraform;
+pub mod tofu;
 
 #[derive(Subcommand)]
 pub enum InfraAction {
@@ -76,20 +76,20 @@ pub enum InfraAction {
 
 pub async fn execute(action: InfraAction) -> anyhow::Result<()> {
     match action {
-        InfraAction::Init { dir, profile } => terraform::run_terraform_init(dir, profile).await,
-        InfraAction::Plan { dir, profile } => terraform::run_terraform_plan(dir, profile).await,
+        InfraAction::Init { dir, profile } => tofu::run_tofu_init(dir, profile).await,
+        InfraAction::Plan { dir, profile } => tofu::run_tofu_plan(dir, profile).await,
         InfraAction::Apply {
             dir,
             auto_approve,
             profile,
-        } => terraform::run_terraform_apply(dir, auto_approve, profile).await,
+        } => tofu::run_tofu_apply(dir, auto_approve, profile).await,
         InfraAction::Destroy {
             dir,
             auto_approve,
             profile,
-        } => terraform::run_terraform_destroy(dir, auto_approve, profile).await,
+        } => tofu::run_tofu_destroy(dir, auto_approve, profile).await,
         InfraAction::Output { name, dir, profile } => {
-            terraform::run_terraform_output(name, dir, profile).await
+            tofu::run_tofu_output(name, dir, profile).await
         }
         InfraAction::Bootstrap { profile, region } => {
             bootstrap::bootstrap_account(profile, region).await

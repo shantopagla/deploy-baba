@@ -38,9 +38,9 @@ pub async fn bootstrap_account(
     // SSM sentinel
     create_sentinel_parameter(&config).await?;
 
-    // Wire up the Terraform backend
-    println!("   Running terraform init...");
-    crate::infra::terraform::run_terraform_init(None, profile).await?;
+    // Wire up the OpenTofu backend
+    println!("   Running tofu init...");
+    crate::infra::tofu::run_tofu_init(None, profile).await?;
 
     println!("✅ AWS account bootstrap complete");
     Ok(())

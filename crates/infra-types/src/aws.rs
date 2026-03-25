@@ -26,7 +26,7 @@ pub struct AwsConfig {
     /// AWS profile name for credential selection
     pub profile: String,
 
-    /// S3 bucket prefix for Terraform state files
+    /// S3 bucket prefix for OpenTofu state files
     pub state_bucket_prefix: String,
 
     /// AWS Systems Manager Parameter Store prefix

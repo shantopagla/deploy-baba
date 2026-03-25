@@ -1,6 +1,7 @@
 # W-TF: terraform
-**Path:** `infra/` | **Status:** DONE (2 deprecation warnings open)
-**Depends on:** (external — AWS provider) | **Depended on by:** W-XT (terraform wrapper)
+**Path:** `infra/` | **Status:** SUPERSEDED → see `plans/modules/opentofu.md` (W-OTF)
+**Note:** W-TF.4.1 and W-TF.4.2 are already fixed in code (see DRL-2026-03-25-opentofu).
+**Depends on:** (external — AWS provider) | **Depended on by:** W-OTF (replaces this module)
 
 ---
 
@@ -87,8 +88,8 @@ depends_on = [
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| W-TF.4.1 | Fix `eventbridge.tf` deprecation | OPEN | Replace `is_enabled = true` with `state = "ENABLED"` (line 6) |
-| W-TF.4.2 | Fix `s3.tf` lifecycle rules | OPEN | Add `filter {}` to each `rule` block in `aws_s3_bucket_lifecycle_configuration` |
+| W-TF.4.1 | Fix `eventbridge.tf` deprecation | RESOLVED | Already uses `state = "ENABLED"` — DRL-2026-03-25-opentofu entry 1 |
+| W-TF.4.2 | Fix `s3.tf` lifecycle rules | RESOLVED | `filter {}` already present — DRL-2026-03-25-opentofu entry 2 |
 
 ---
 
