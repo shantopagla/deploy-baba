@@ -174,7 +174,6 @@ pub trait YamlValidatable {
     ///
     /// Returns `Err` with a vector of validation errors if validation fails.
     /// Returns `Ok(())` if the configuration is valid.
-    #[must_use]
     fn validate_yaml(&self) -> Result<(), Vec<ValidationError>>;
 }
 

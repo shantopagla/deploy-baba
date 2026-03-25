@@ -174,7 +174,6 @@ pub trait TomlValidatable {
     ///
     /// Returns `Err` with a vector of validation errors if validation fails.
     /// Returns `Ok(())` if the configuration is valid.
-    #[must_use]
     fn validate_toml(&self) -> Result<(), Vec<ValidationError>>;
 }
 

@@ -61,7 +61,7 @@ impl SqliteConfig {
 
     /// Extract the database filename from the path.
     pub fn filename(&self) -> Option<&str> {
-        self.path.split('/').last()
+        self.path.split('/').next_back()
     }
 
     /// Check if backup is configured.

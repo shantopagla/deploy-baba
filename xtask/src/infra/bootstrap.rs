@@ -51,7 +51,13 @@ async fn create_state_bucket(config: &aws_config::SdkConfig) -> anyhow::Result<(
 
     let client = S3Client::new(config);
 
-    if let Ok(_) = client.head_bucket().bucket(BUCKET_NAME).send().await {
+    if client
+        .head_bucket()
+        .bucket(BUCKET_NAME)
+        .send()
+        .await
+        .is_ok()
+    {
         println!("   ℹ️  Bucket already exists: {}", BUCKET_NAME);
         return Ok(());
     }
@@ -149,7 +155,13 @@ async fn create_lock_table(config: &aws_config::SdkConfig) -> anyhow::Result<()>
     let client = DynamoClient::new(config);
 
     // Check if table already exists
-    if let Ok(_) = client.describe_table().table_name(LOCK_TABLE).send().await {
+    if client
+        .describe_table()
+        .table_name(LOCK_TABLE)
+        .send()
+        .await
+        .is_ok()
+    {
         println!("   ℹ️  DynamoDB table already exists: {}", LOCK_TABLE);
         return Ok(());
     }

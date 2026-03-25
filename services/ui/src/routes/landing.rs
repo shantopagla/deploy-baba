@@ -11,9 +11,8 @@ struct LandingTemplate {
 }
 
 pub async fn handler() -> impl IntoResponse {
-    let template = LandingTemplate {
+    LandingTemplate {
         version: VERSION,
         crate_count: 10,
-    };
-    template
+    }
 }

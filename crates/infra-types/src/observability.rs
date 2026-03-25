@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// assert_eq!(config.log_level, LogLevel::Info);
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ObservabilityConfig {
     /// Log level for the application
     #[serde(default)]
@@ -34,18 +34,8 @@ pub struct ObservabilityConfig {
     pub alerts: Option<AlertConfig>,
 }
 
-impl Default for ObservabilityConfig {
-    fn default() -> Self {
-        Self {
-            log_level: LogLevel::default(),
-            metrics: None,
-            alerts: None,
-        }
-    }
-}
-
 /// Log level for the application.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
     /// Trace level (most verbose)
@@ -53,6 +43,7 @@ pub enum LogLevel {
     /// Debug level
     Debug,
     /// Info level
+    #[default]
     Info,
     /// Warn level
     Warn,
@@ -86,12 +77,6 @@ impl LogLevel {
             LogLevel::Warn => "Warning",
             LogLevel::Error => "Error",
         }
-    }
-}
-
-impl Default for LogLevel {
-    fn default() -> Self {
-        LogLevel::Info
     }
 }
 

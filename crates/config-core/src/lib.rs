@@ -167,7 +167,6 @@ pub trait ConfigParser<T> {
     /// # Errors
     ///
     /// Returns `Err` if the input cannot be parsed into type `T`.
-    #[must_use]
     fn parse(input: &str) -> Result<T, Self::Error>;
 
     /// Validate parsed configuration
@@ -176,7 +175,6 @@ pub trait ConfigParser<T> {
     ///
     /// Returns `Err(Vec<ValidationError>)` if validation fails.
     /// The vector contains details about each validation error.
-    #[must_use]
     fn validate(config: &T) -> Result<(), Vec<ValidationError>>;
 
     /// Parse and validate in one operation
@@ -188,7 +186,6 @@ pub trait ConfigParser<T> {
     ///
     /// Returns `ConfigParseError::Parse` if parsing fails, or
     /// `ConfigParseError::Validation` if validation fails.
-    #[must_use]
     fn parse_and_validate(input: &str) -> Result<T, ConfigParseError<Self::Error>> {
         let config = Self::parse(input).map_err(ConfigParseError::Parse)?;
         Self::validate(&config).map_err(ConfigParseError::Validation)?;
@@ -225,7 +222,6 @@ pub trait ConfigValidator<T> {
     /// # Errors
     ///
     /// Returns `Err(Vec<ValidationError>)` if any validation rules fail.
-    #[must_use]
     fn validate(config: &T) -> Result<(), Vec<ValidationError>>;
 
     /// Check if configuration is valid (convenience method)
@@ -416,7 +412,6 @@ pub trait EnvironmentInterpolator<T> {
     ///
     /// Returns error if a referenced environment variable doesn't exist
     /// or if interpolation fails.
-    #[must_use]
     fn interpolate_env(config: &mut T) -> Result<(), ConfigError>;
 }
 
@@ -449,7 +444,6 @@ pub trait ConfigMerger<T> {
     /// # Errors
     ///
     /// Returns error if merging is not possible or leads to invalid state.
-    #[must_use]
     fn merge(base: T, other: T) -> Result<T, ConfigError>;
 }
 
@@ -549,7 +543,7 @@ mod tests {
 
     #[test]
     fn test_multiple_validation_errors() {
-        let errors = vec![
+        let errors = [
             ValidationError::new("field1", "error1"),
             ValidationError::new("field2", "error2"),
         ];

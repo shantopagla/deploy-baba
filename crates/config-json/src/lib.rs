@@ -174,7 +174,6 @@ pub trait JsonValidatable {
     ///
     /// Returns `Err` with a vector of validation errors if validation fails.
     /// Returns `Ok(())` if the configuration is valid.
-    #[must_use]
     fn validate_json(&self) -> Result<(), Vec<ValidationError>>;
 }
 
@@ -498,7 +497,7 @@ mod tests {
         assert!(validation.is_ok());
 
         // Test blanket implementation for f64
-        let validation = 3.14f64.validate_json();
+        let validation = std::f64::consts::PI.validate_json();
         assert!(validation.is_ok());
     }
 }
