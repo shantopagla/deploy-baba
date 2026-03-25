@@ -1,4 +1,7 @@
 use axum::{extract::Json, routing::post, Router};
+use std::sync::Arc;
+
+use crate::db::Db;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -160,7 +163,7 @@ pub async fn generate_spec(Json(req): Json<GenerateSpecRequest>) -> Json<Generat
     Json(GenerateSpecResponse { spec })
 }
 
-pub fn router() -> Router {
+pub fn router() -> Router<Arc<Db>> {
     Router::new()
         .route("/config/parse", post(parse_config))
         .route("/spec/generate", post(generate_spec))

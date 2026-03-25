@@ -1,12 +1,14 @@
 use axum::{response::Html, routing::get, Router};
+use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use utoipa::OpenApi;
 
+use crate::db::Db;
 use crate::openapi::ApiDoc;
 use crate::routes;
 
-pub fn build() -> Router {
+pub fn build(db: Arc<Db>) -> Router {
     let api_routes = routes::api::router();
 
     let openapi = ApiDoc::openapi();
@@ -14,6 +16,7 @@ pub fn build() -> Router {
     Router::new()
         .route("/", get(routes::landing::handler))
         .route("/health", get(routes::health::get_health))
+        .route("/resume", get(routes::resume::handler))
         .nest("/api", api_routes)
         .route("/docs", get(docs_handler))
         .route(
@@ -22,6 +25,7 @@ pub fn build() -> Router {
         )
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
+        .with_state(db)
 }
 
 async fn docs_handler() -> Html<&'static str> {

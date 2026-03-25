@@ -1,5 +1,5 @@
 # deploy-baba — Plan Index
-**GitHub:** `shantopagla/deploy-baba` | **Last updated:** 2026-03-18
+**GitHub:** `shantopagla/deploy-baba` | **Last updated:** 2026-03-25
 **Source repo:** `~/shanto` (Baba Toolchain, ~85K LOC) | **Status:** ~85% complete
 
 See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming rules.
@@ -21,6 +21,7 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 | api-merger | W-APIM | `crates/api-merger/` | DONE | Per-crate README |
 | infra-types | W-INFR | `crates/infra-types/` | DONE | Per-crate README |
 | ui-service | W-UI | `services/ui/` | DONE | utoipa-rapidoc wiring (using inline HTML) |
+| resume | W-RSM | `services/ui/migrations/`, `routes/resume.rs`, `routes/api/jobs.rs`, `routes/api/competencies.rs` | DONE | Functional view grouping (W-RSM.8.1), print CSS (W-RSM.8.3) |
 | xtask | W-XT | `xtask/` | WIP | CLI naming mismatch (`fmt` vs `Format`), `EnvironmentInterpolator` unused |
 | terraform | W-TF | `infra/` | DONE | Fix `is_enabled`→`state`, add `filter {}` to lifecycle rules |
 | dx-justfile | W-DX | `justfile`, `docs/`, `examples/` | WIP | Per-crate READMEs, integration tests |

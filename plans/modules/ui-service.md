@@ -31,6 +31,12 @@ POST /api/demo/config/parse    Body: {format:"toml"|"yaml"|"json", content:"..."
                                → Parsed config object or validation errors
 POST /api/demo/spec/generate   Body: {fields:[{name,type,required},...], title:"..."}
                                → OpenAPI JSON for a synthetic schema
+
+GET  /resume                   Career timeline + capabilities dual-view (→ W-RSM)
+GET  /api/jobs                 [{slug, company, title, dates, summary, tech_stack}, ...]
+GET  /api/jobs/{slug}          Job + detail bullets grouped by category
+GET  /api/competencies         [{slug, name, description, icon}, ...]
+GET  /api/competencies/{slug}  Competency + cross-referenced evidence items
 ```
 
 `/api/demo/*` invoke real crates at runtime — not mocks.
@@ -85,7 +91,7 @@ strip          = true
 ```
 
 Askama templates: ~0 overhead (compile-time embedded).
-No database driver in the UI itself (SQLite is for app state, not portfolio).
+SQLite (rusqlite, bundled) added for resume data — see W-RSM for data model and migration runner.
 
 ### Not imported in UI service
 `api-graphql` and `api-grpc` — only OpenAPI demo is live. GraphQL/gRPC demonstrated

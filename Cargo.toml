@@ -77,6 +77,9 @@ clap = { version = "4", features = ["derive"] }
 # Compression
 flate2 = "1"
 
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
 # Internal crates
 config-core = { path = "crates/config-core" }
 config-toml = { path = "crates/config-toml" }
