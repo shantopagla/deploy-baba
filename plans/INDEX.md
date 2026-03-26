@@ -1,5 +1,5 @@
 # deploy-baba — Plan Index
-**GitHub:** `shantopagla/deploy-baba` | **Last updated:** 2026-03-25
+**GitHub:** `shantopagla/deploy-baba` | **Last updated:** 2026-03-26
 **Source repo:** `~/shanto` (Baba Toolchain, ~85K LOC) | **Status:** ~85% complete
 
 See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming rules.
@@ -26,10 +26,19 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 | terraform | W-TF | `infra/` | SUPERSEDED | Replaced by W-OTF (OpenTofu). W-TF.4.1 and W-TF.4.2 already fixed in code. |
 | opentofu | W-OTF | `infra/` + `xtask/src/infra/` | WIP | Install `tofu` binary (W-OTF.4.1 OPEN); smoke test (W-OTF.4.7 BLOCKED); docs (W-OTF.4.9 TODO) |
 | dx-justfile | W-DX | `justfile`, `docs/`, `examples/` | WIP | Per-crate READMEs, integration tests |
+| auth | W-AUTH | `services/ui/src/auth.rs`, `routes/auth.rs`, `routes/api/admin.rs`, `infra/cognito.tf` | TODO | All 18 work items (W-AUTH.4.1–4.18); plan docs done (W-AUTH.4.16–4.18) |
 
 ---
 
 ## Remaining Work — Priority Order
+
+### P0 — New Feature (in progress on `cognito-login` branch)
+1. **W-AUTH.4.1–4.15** — Implement Cognito auth + admin dashboard (Phases 1–5 of W-AUTH plan)
+   - Phase 1 (infra): `infra/cognito.tf`, SSM params, Lambda env vars
+   - Phase 2 (app): `auth.rs`, `state.rs`, `middleware.rs`, `main.rs`
+   - Phase 3 (auth routes): `/auth/login`, `/auth/callback`, `/auth/logout`
+   - Phase 4 (admin API): full CRUD POST/PUT/DELETE for all resume tables
+   - Phase 5 (dashboard UI): `dashboard.html`, `dashboard.rs`, `router.rs`, `base.html`
 
 ### P1 — Must Fix (blocking clean CI)
 1. ~~**W-XT.4.1**~~ — CLI naming: 3 justfile mismatches fixed (`fmt`→`format`, `--crate`→`crate` subcommand, `gate`→`all`) — **RESOLVED**
@@ -63,6 +72,7 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 | ADR-005 | Zero-Cost Philosophy | W-CFG, W-API, W-INFR |
 | ADR-006 | EFS + SQLite + S3 Backup | W-INFR, W-TF, W-XT |
 | ADR-007 | OpenTofu Over Terraform | W-OTF, W-XT |
+| ADR-008 | Cognito Authentication for Admin Dashboard | W-AUTH, W-UI, W-OTF |
 
 ---
 
