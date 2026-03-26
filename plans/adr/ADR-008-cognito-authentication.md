@@ -1,7 +1,7 @@
 # ADR-008: Cognito Authentication for Admin Dashboard
 
 **Date:** 2026-03-26
-**Status:** Proposed
+**Status:** Amended 2026-03-26 (W-AUTH.4.21 — implicit grant; JWKS from env)
 **Affected Modules:** W-AUTH, W-UI, W-OTF
 
 ---
@@ -33,24 +33,33 @@ The following options were considered:
 ## Decision
 
 Use **AWS Cognito** with the hosted UI for authentication. A single user pool (`baba` pool)
-contains one user (`baba-admin`). The web app uses the **PKCE authorization code flow**:
+contains one user (`baba-admin`). The web app uses the **implicit grant flow**:
 
 ```
 Browser → GET /auth/login
-        → 302 to Cognito hosted UI (login form)
+        → 302 to Cognito hosted UI (response_type=token, scope=openid → returns id_token in fragment)
         → POST credentials to Cognito
-        → 302 to GET /auth/callback?code=xxx
-        → Lambda: POST /oauth2/token to exchange code
-        → Validate ID token (RS256, JWKS from Cognito)
-        → Set auth_token HttpOnly cookie
-        → 302 to /dashboard
+        → 302 to GET /auth/callback#id_token=xxx  (fragment — not sent to server)
+        → Lambda: return HTML page with inline JS
+        → JS: extract id_token from window.location.hash
+        → JS: POST {"id_token": "..."} to /auth/set-session
+        → Lambda: validate JWT (RS256, JWKS from env var)
+        → Set auth_token HttpOnly cookie; return 200
+        → JS: redirect to /dashboard
 ```
+
+**Amendment (W-AUTH.4.21, 2026-03-26):** Originally designed as PKCE authorization code flow.
+Amended because Lambda runs in a VPC (for EFS) with no NAT Gateway — it cannot make outbound
+HTTPS calls to either the Cognito token endpoint or the JWKS endpoint. The W-AUTH.4.20 lazy
+JWKS fetch deferred the failure but didn't solve it. Switching to implicit grant eliminates all
+outbound calls from Lambda.
 
 **Session management:** HttpOnly/Secure/SameSite=Lax cookie (1h TTL, matches ID token).
 No localStorage, no sessionStorage — XSS cannot steal the token.
 
-**JWT validation:** App-layer RS256 validation using `jsonwebtoken` crate. JWKS fetched from
-Cognito's well-known endpoint at startup and cached for the process lifetime (~1 cold start).
+**JWT validation:** App-layer RS256 validation using `jsonwebtoken` crate. JWKS is fetched
+by OpenTofu at deploy time (`data "http" "cognito_jwks"`) and stored in the `COGNITO_JWKS`
+Lambda env var. No network call at cold start or per-request.
 
 **Lambda Function URL auth stays `NONE`** — Cognito operates at the application layer, not
 the Lambda URL layer. CloudFront → Lambda URL authentication is unchanged (→ ADR-003).
@@ -64,12 +73,14 @@ the Lambda URL layer. CloudFront → Lambda URL authentication is unchanged (→
 - Free tier covers 10K MAU/month (single admin = ~0 cost)
 - Standard OIDC flow — battle-tested browser compat, no custom login form to maintain
 - HttpOnly cookie session is XSS-resistant; SameSite=Lax is CSRF-resistant
-- JWKS cached at startup: ~50ms cold-start overhead, zero per-request latency
+- JWKS embedded in env var: zero cold-start or per-request network overhead
 - Dev-mode bypass (`COGNITO_POOL_ID` unset) keeps `just ui` working without AWS credentials
+- No NAT Gateway required — Lambda stays in VPC for EFS access at zero extra cost
 
 **Negative:**
 - Additional AWS resource (Cognito user pool) adds complexity to `infra/cognito.tf`
-- Cold starts incur one JWKS HTTP fetch (reqwest → Cognito well-known endpoint)
+- Implicit grant is less secure than PKCE code flow (token in URL fragment, though short-lived)
+- JWKS keys embedded at deploy time — must re-deploy if Cognito rotates keys
 - Admin must use Cognito hosted UI for password reset (no custom reset flow needed)
 
 **Neutral:**
@@ -121,13 +132,14 @@ New resources in `infra/cognito.tf`:
 
 | Resource | Notes |
 |----------|-------|
-| `aws_cognito_user_pool` | Password: min 12, upper+lower+num+sym; email verified; deletion protection |
+| `aws_cognito_user_pool` | Password: min 12, upper+lower+num+sym; email verified; deletion protection; **self-sign-up disabled** |
 | `aws_cognito_user_pool_domain` | `deploy-baba-prod.auth.us-east-1.amazoncognito.com` |
-| `aws_cognito_user_pool_client` | Public PKCE client; callbacks: prod + localhost:3000 |
+| `aws_cognito_user_pool_client` | Public implicit grant client; callbacks: prod + localhost:3000 |
 | `aws_cognito_user` | `baba-admin`; temp password via sensitive variable; reset on first login |
+| `data "http" "cognito_jwks"` | Fetches JWKS at deploy time; stored in `COGNITO_JWKS` Lambda env var |
 
 Lambda env vars added to `infra/lambda.tf`:
-`COGNITO_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_DOMAIN`, `COGNITO_REGION`, `APP_DOMAIN`
+`COGNITO_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_DOMAIN`, `COGNITO_REGION`, `APP_DOMAIN`, `COGNITO_JWKS`
 
 ---
 

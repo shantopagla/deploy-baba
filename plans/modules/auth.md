@@ -33,8 +33,9 @@ artifacts via a protected `/dashboard` — without SSH or direct SQLite access.
 
 | Route | Behavior |
 |-------|----------|
-| `GET /auth/login` | 302 → Cognito hosted UI |
-| `GET /auth/callback?code=xxx` | Exchange code → tokens; set `auth_token` cookie; 302 → `/dashboard` |
+| `GET /auth/login` | 302 → Cognito hosted UI (`response_type=token&scope=openid` → `id_token` in fragment) |
+| `GET /auth/callback` | Serve HTML page; JS extracts `id_token` from URL fragment, POSTs to `/auth/set-session` |
+| `POST /auth/set-session` | Validate `id_token` JWT; set `auth_token` HttpOnly cookie; 200 or 401 |
 | `GET /auth/logout` | Clear cookie; 302 → Cognito `/logout` |
 
 ### Admin CRUD API (`services/ui/src/routes/api/admin.rs`)
@@ -77,14 +78,15 @@ pub struct AppState {
 
 ### 3.1 Infrastructure — `infra/cognito.tf`
 
-Four new HCL resources:
+Five HCL resources:
 
 | Resource | Notes |
 |----------|-------|
 | `aws_cognito_user_pool.baba` | Password policy: min 12, upper+lower+num+sym; email auto-verified; deletion protection ACTIVE |
 | `aws_cognito_user_pool_domain.baba` | Domain: `${var.project_name}-${var.environment}` → `deploy-baba-prod.auth.us-east-1.amazoncognito.com` |
-| `aws_cognito_user_pool_client.baba_web` | Public client (no secret); PKCE code flow; callback/logout URLs for prod + localhost:3000 |
+| `aws_cognito_user_pool_client.baba_web` | Public client (no secret); **implicit grant flow**; callback/logout URLs for prod + localhost:3000 |
 | `aws_cognito_user.baba_admin` | username: `baba-admin`; email: `var.admin_email`; temp password via sensitive variable |
+| `data "http" "cognito_jwks"` | Fetches JWKS at deploy time; stored in `COGNITO_JWKS` Lambda env var — no runtime outbound calls |
 
 New variables in `infra/variables.tf`:
 - `admin_email` (string, default `"it@shantopagla.com"`)
@@ -94,7 +96,7 @@ New SSM parameters in `infra/ssm.tf` (under `/${project_name}/${environment}/`):
 - `cognito-pool-id`, `cognito-client-id`, `cognito-domain`
 
 New Lambda env vars in `infra/lambda.tf` `environment.variables`:
-- `COGNITO_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_DOMAIN`, `COGNITO_REGION`, `APP_DOMAIN`
+- `COGNITO_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_DOMAIN`, `COGNITO_REGION`, `APP_DOMAIN`, `COGNITO_JWKS`
 
 ### 3.2 Auth Module — `services/ui/src/auth.rs`
 
@@ -105,7 +107,7 @@ pub struct AuthConfig {
     pub cognito_domain: String,  // e.g. "deploy-baba-prod.auth.us-east-1.amazoncognito.com"
     pub region: String,
     pub app_domain: String,      // e.g. "https://sislam.com"
-    pub jwks: JwkSet,            // cached at startup
+    jwks_json: String,           // embedded from COGNITO_JWKS env var at deploy time
     pub dev_mode: bool,          // true when COGNITO_POOL_ID is unset
 }
 
@@ -117,15 +119,32 @@ pub enum AuthError { ... }  // via thiserror
 **Dev-mode bypass:** when `COGNITO_POOL_ID` is absent, `from_env()` returns a dev config where
 `validate_token` always succeeds. All routes (including `/dashboard`) work locally without AWS.
 
-JWKS URL: `https://cognito-idp.{region}.amazonaws.com/{pool_id}/.well-known/jwks.json`
-Fetched lazily on first auth request via `reqwest` with a 5-second timeout; cached in
-`Arc<tokio::sync::OnceCell<String>>`.  `from_env()` is synchronous — no network I/O at startup.
-`validate_token` is `async` to drive the lazy fetch.
+**JWKS from env var:** `COGNITO_JWKS` is populated at deploy time by OpenTofu's `data "http"`
+data source, which fetches JWKS from Cognito before Lambda is updated.  Lambda reads this string
+at startup — no outbound network call needed.  `from_env()` and `validate_token` are both free
+of I/O.  `validate_token` stays `async` for interface stability.
 
-**Rationale:** Lambda runs in a VPC (for EFS) without a NAT Gateway, so it cannot reach the
-public Cognito JWKS endpoint.  Blocking at startup caused 504s on all routes.  Deferred fetch
-means public routes (`/`, `/api/*`) remain unaffected when JWKS is unavailable.  Auth routes
-fail with 401/302 (not a server hang) if the endpoint is still unreachable.
+**Rationale:** Lambda runs in a VPC (for EFS) without a NAT Gateway.  The W-AUTH.4.20 lazy
+fetch deferred the failure but didn't solve it — JWKS fetch still timed out on first auth
+request.  Embedding JWKS at deploy time eliminates all outbound calls from Lambda.  Keys are
+refreshed on each `just deploy` (which re-runs `tofu apply`).
+
+### 3.3 Callback Flow (implicit grant)
+
+```
+Browser → GET /auth/login
+        → 302 to Cognito hosted UI (response_type=id_token)
+        → POST credentials to Cognito
+        → 302 to GET /auth/callback#id_token=xxx&...  (fragment — NOT sent to server)
+        → Lambda: return HTML page
+        → JS: extract id_token from window.location.hash
+        → JS: POST {"id_token": "..."} to /auth/set-session
+        → Lambda: validate JWT (RS256 using jwks_json from env)
+        → Lambda: set auth_token HttpOnly cookie
+        → JS: redirect to /dashboard
+```
+
+Token exchange is client-side only; Lambda never makes outbound calls.
 
 ### 3.3 Middleware — `services/ui/src/middleware.rs`
 
@@ -205,7 +224,8 @@ W-AUTH.4.5 (workspace deps)
 | W-AUTH.4.17 | Create `plans/adr/ADR-008-cognito-authentication.md` | DONE | Decision record |
 | W-AUTH.4.18 | Update `plans/INDEX.md` + cross-cutting files | DONE | W-AUTH row, ADR-008, Cognito topology + IAM |
 | W-AUTH.4.19 | Add OpenAPI security scheme + admin endpoint docs | DONE | cookieAuth/bearerAuth, 12 admin paths, ToSchema on input types |
-| W-AUTH.4.20 | Fix Lambda 504 — lazy JWKS fetch with 5s timeout | DONE | `from_env()` sync; `jwks_json: Arc<OnceCell<String>>`; `validate_token` async; `middleware.rs` `.await` added |
+| W-AUTH.4.20 | Fix Lambda 504 — lazy JWKS fetch with 5s timeout | SUPERSEDED | Deferred fetch still failed (VPC has no NAT Gateway). Replaced by W-AUTH.4.21. |
+| W-AUTH.4.21 | Fix Cognito callback 504 — implicit grant + JWKS from env var | DONE | `allowed_oauth_flows=["implicit"]`; `allow_admin_create_user_only=true` (no self-signup); `data "http" cognito_jwks`; `COGNITO_JWKS` env var; HTML callback page + `/auth/set-session` endpoint; zero Lambda outbound calls |
 
 ---
 
