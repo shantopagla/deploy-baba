@@ -189,7 +189,40 @@ curl -fsSL https://get.opentofu.org/install-opentofu.sh | sh -s -- --install-met
 | W-OTF.4.6 | Delete `infra/.terraform.lock.hcl` if present | N/A | Lock file was never committed (DRL-2026-03-25-opentofu entry 6) |
 | W-OTF.4.7 | Run `just infra-bootstrap PROFILE` with tofu | BLOCKED | Needs W-OTF.4.1 (install tofu binary) |
 | W-OTF.4.8 | Mark W-TF as superseded in INDEX.md | DONE | Done in plans/modules/terraform.md and INDEX.md |
-| W-OTF.4.9 | Update docs (aws-setup.md, README) | TODO | `terraform` → `tofu` references in prose |
+| W-OTF.4.9 | Update docs — `terraform` → `tofu`/`OpenTofu` in prose | TODO | See W-OTF.4.9 Detail below |
+
+### W-OTF.4.9 Detail — Doc Update Audit (2026-03-26)
+
+**Already clean (no action):**
+- `README.md` — 0 terraform references
+- `PLAN.md` — archived
+- `plans/modules/terraform.md`, `plans/drift/DRL-*`, `plans/adr/ADR-*` — historical/intentional
+
+**Files to update (prose only, 9 files):**
+
+| File | Line(s) | Current | Target | Notes |
+|------|---------|---------|--------|-------|
+| `CLAUDE.md` | 47 | `Infrastructure managed via Terraform` | `via OpenTofu` | |
+| `CLAUDE.md` | 70 | `# Terraform (Lambda + EFS + …)` | `# OpenTofu (…)` | |
+| `CLAUDE.md` | 86 | `Terraform plan/apply` | `OpenTofu plan/apply` | |
+| `docs/aws-setup.md` | 28 | `full Terraform provisioning` | `full OpenTofu provisioning` | IAM SIDs unchanged (deployed names) |
+| `docs/architecture.md` | 72 | `Terraform, deployment` | `OpenTofu, deployment` | |
+| `justfile` | 104 | `reads from Terraform outputs` | `OpenTofu outputs` | comment only |
+| `justfile` | 136 | `Infrastructure (Terraform)` | `Infrastructure (OpenTofu)` | comment only |
+| `justfile` | 154 | `Show Terraform outputs` | `Show OpenTofu outputs` | comment only |
+| `plans/modules/xtask.md` | 11 | `Wraps cargo, terraform, AWS SDK` | `cargo, tofu, AWS SDK` | |
+| `plans/modules/xtask.md` | 43-45 | file tree: `terraform.rs` | `tofu.rs`; update descriptions | |
+| `plans/modules/xtask.md` | 76 | `Run terraform -chdir=infra init` | `tofu -chdir=infra init` | |
+| `plans/modules/xtask.md` | 97 | `Terraform subprocess pattern` | `OpenTofu subprocess pattern` | |
+| `plans/cross-cutting/dependency-graph.md` | 99 | `terraform \| brew install terraform` | `tofu \| brew install opentofu` | |
+| `plans/cross-cutting/aws-architecture.md` | 117 | `Terraform Resources (28 total)` | `OpenTofu Resources (28 total)` | |
+| `plans/INDEX.md` | 113 | `# Terraform (Lambda + EFS + …)` | `# OpenTofu (…)` | |
+| `plans/modules/dx-justfile.md` | 71 | `Infrastructure (Terraform)` | `Infrastructure (OpenTofu)` | |
+
+**Intentionally NOT changed:**
+- AWS resource names: DynamoDB `terraform-lock`, S3 key `terraform.tfstate`, IAM SIDs — deployed names
+- HCL `terraform {}` block — syntax, not product name
+- Archived/historical: PLAN.md, terraform.md, drift logs, ADRs
 
 ### Dependency Order
 ```
