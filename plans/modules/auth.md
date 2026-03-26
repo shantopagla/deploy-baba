@@ -118,7 +118,14 @@ pub enum AuthError { ... }  // via thiserror
 `validate_token` always succeeds. All routes (including `/dashboard`) work locally without AWS.
 
 JWKS URL: `https://cognito-idp.{region}.amazonaws.com/{pool_id}/.well-known/jwks.json`
-Fetched once at startup via `reqwest`; cached in `Arc<AuthConfig>`.
+Fetched lazily on first auth request via `reqwest` with a 5-second timeout; cached in
+`Arc<tokio::sync::OnceCell<String>>`.  `from_env()` is synchronous — no network I/O at startup.
+`validate_token` is `async` to drive the lazy fetch.
+
+**Rationale:** Lambda runs in a VPC (for EFS) without a NAT Gateway, so it cannot reach the
+public Cognito JWKS endpoint.  Blocking at startup caused 504s on all routes.  Deferred fetch
+means public routes (`/`, `/api/*`) remain unaffected when JWKS is unavailable.  Auth routes
+fail with 401/302 (not a server hang) if the endpoint is still unreachable.
 
 ### 3.3 Middleware — `services/ui/src/middleware.rs`
 
@@ -197,6 +204,8 @@ W-AUTH.4.5 (workspace deps)
 | W-AUTH.4.16 | Create `plans/modules/auth.md` | DONE | This file |
 | W-AUTH.4.17 | Create `plans/adr/ADR-008-cognito-authentication.md` | DONE | Decision record |
 | W-AUTH.4.18 | Update `plans/INDEX.md` + cross-cutting files | DONE | W-AUTH row, ADR-008, Cognito topology + IAM |
+| W-AUTH.4.19 | Add OpenAPI security scheme + admin endpoint docs | DONE | cookieAuth/bearerAuth, 12 admin paths, ToSchema on input types |
+| W-AUTH.4.20 | Fix Lambda 504 — lazy JWKS fetch with 5s timeout | DONE | `from_env()` sync; `jwks_json: Arc<OnceCell<String>>`; `validate_token` async; `middleware.rs` `.await` added |
 
 ---
 
