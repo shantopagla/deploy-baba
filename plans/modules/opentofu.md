@@ -189,7 +189,7 @@ curl -fsSL https://get.opentofu.org/install-opentofu.sh | sh -s -- --install-met
 | W-OTF.4.6 | Delete `infra/.terraform.lock.hcl` if present | N/A | Lock file was never committed (DRL-2026-03-25-opentofu entry 6) |
 | W-OTF.4.7 | Run `just infra-bootstrap PROFILE` with tofu | BLOCKED | Needs W-OTF.4.1 (install tofu binary) |
 | W-OTF.4.8 | Mark W-TF as superseded in INDEX.md | DONE | Done in plans/modules/terraform.md and INDEX.md |
-| W-OTF.4.9 | Update docs — `terraform` → `tofu`/`OpenTofu` in prose | TODO | See W-OTF.4.9 Detail below |
+| W-OTF.4.9 | Update docs — `terraform` → `tofu`/`OpenTofu` in prose | DONE | 9 files updated; see W-OTF.4.9 Detail below |
 
 ### W-OTF.4.9 Detail — Doc Update Audit (2026-03-26)
 

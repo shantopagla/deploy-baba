@@ -101,7 +101,7 @@ ui-build:
 ui-logs PROFILE="default":
     just aws-check {{PROFILE}} && cargo xtask aws logs --function deploy-baba-ui --profile {{PROFILE}}
 
-# Open the live portfolio URL (reads from Terraform outputs)
+# Open the live portfolio URL (reads from OpenTofu outputs)
 ui-open PROFILE="default":
     cargo xtask infra output --key function_url --profile {{PROFILE}} | xargs open
 
@@ -133,7 +133,7 @@ aws-setup:
 aws-whoami PROFILE="default":
     aws sts get-caller-identity --profile {{PROFILE}}
 
-# ── Infrastructure (Terraform) ───────────────────────────────────────────────
+# ── Infrastructure (OpenTofu) ────────────────────────────────────────────────
 
 # Bootstrap: create S3 state bucket + write sentinel SSM param (first run only)
 infra-bootstrap PROFILE="default" REGION="us-east-1":
@@ -151,7 +151,7 @@ infra-apply PROFILE="default":
 infra-destroy PROFILE="default":
     just aws-check {{PROFILE}} && cargo xtask infra destroy --profile {{PROFILE}}
 
-# Show Terraform outputs (API endpoint URL, etc.)
+# Show OpenTofu outputs (API endpoint URL, etc.)
 infra-output PROFILE="default":
     cargo xtask infra output --profile {{PROFILE}}
 

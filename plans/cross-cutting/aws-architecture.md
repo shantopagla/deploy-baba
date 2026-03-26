@@ -114,7 +114,7 @@ mode = "lambda"    # or "ecs-fargate-spot"
 
 ---
 
-## Terraform Resources (28 total)
+## OpenTofu Resources (28 total)
 
 Managed in `infra/`:
 

@@ -110,7 +110,7 @@ shantopagla/deploy-baba/
 │   └── infra-types/
 ├── services/ui/            # Portfolio site + deployed Lambda binary
 ├── xtask/                  # Internal tooling (called by justfile)
-├── infra/                  # Terraform (Lambda + EFS + S3 + EventBridge)
+├── infra/                  # OpenTofu (Lambda + EFS + S3 + EventBridge)
 ├── examples/               # 4 standalone examples
 ├── docs/                   # aws-setup.md, architecture.md, etc.
 └── plans/                  # This plan system (replaces PLAN.md monolith)

@@ -69,7 +69,7 @@ backup as the database layer.
 ### xtask
 
 Internal tooling invoked by the justfile. Handles build quality, AWS
-operations, Terraform, deployment, and SQLite backup/restore.
+operations, OpenTofu, deployment, and SQLite backup/restore.
 
 ## Design Principles
 

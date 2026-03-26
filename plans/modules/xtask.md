@@ -8,7 +8,7 @@
 ## W-XT.1 Purpose
 
 Internal automation tooling. Invoked exclusively by the justfile — never documented
-as a user-facing API. Wraps `cargo`, `terraform`, AWS SDK, and Docker operations.
+as a user-facing API. Wraps `cargo`, `tofu`, AWS SDK, and Docker operations.
 
 → ADR-001 (justfile is the only interface)
 
@@ -40,9 +40,9 @@ xtask/src/
 │   ├── lambda.rs    cargo lambda build + zip + aws lambda update-function-code
 │   └── ecs.rs       register new task definition, update service
 ├── infra/
-│   ├── mod.rs       terraform wrapper, reads AWS profile + region from stack.toml
-│   ├── terraform.rs init, plan, apply, destroy, output (-json)
-│   └── bootstrap.rs S3 state bucket + DynamoDB lock + SSM sentinel + terraform init
+│   ├── mod.rs       tofu wrapper, reads AWS profile + region from stack.toml
+│   ├── tofu.rs      init, plan, apply, destroy, output (-json)
+│   └── bootstrap.rs S3 state bucket + DynamoDB lock + SSM sentinel + tofu init
 └── database/
     ├── mod.rs       SQLite + S3 config from stack.toml
     ├── backup.rs    VACUUM INTO + gzip + S3 upload + retention pruning
@@ -73,7 +73,7 @@ First-run setup (called by `just infra-bootstrap`):
 1. Create S3 bucket `deploy-baba-tfstate` (versioning + AES256 + block public access)
 2. Create DynamoDB table `terraform-lock` (PAY_PER_REQUEST, LockID hash key)
 3. Write SSM params: `/deploy-baba/sentinel`, `/deploy-baba/region`, `/deploy-baba/account`
-4. Run `terraform -chdir=infra init` with S3 backend config
+4. Run `tofu -chdir=infra init` with S3 backend config
 
 ### `deploy/lambda.rs`
 ```
@@ -94,7 +94,7 @@ First-run setup (called by `just infra-bootstrap`):
 5. List all backups, delete oldest if count > retain_versions
 ```
 
-### Terraform subprocess pattern
+### OpenTofu subprocess pattern
 ```rust
 cmd.arg(format!("-chdir={}", dir))  // BEFORE subcommand
    .arg(subcommand)

@@ -25,7 +25,7 @@ For SSO users, configure SSO fields in the profile section instead.
 ## 2. Required IAM Permissions
 
 Attach this policy to the IAM user/role used for deployment. It covers both
-CI/CD operations and full Terraform provisioning (first-time `just infra-apply`).
+CI/CD operations and full OpenTofu provisioning (first-time `just infra-apply`).
 
 ```json
 {
@@ -154,7 +154,7 @@ CI/CD operations and full Terraform provisioning (first-time `just infra-apply`)
 just infra-bootstrap deploy-baba
 ```
 
-This creates the S3 state bucket for Terraform and writes the SSM sentinel
+This creates the S3 state bucket for OpenTofu and writes the SSM sentinel
 parameter that `just aws-check` uses for validation.
 
 ## 4. Validate Setup

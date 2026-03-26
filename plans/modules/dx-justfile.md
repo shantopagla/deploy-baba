@@ -68,7 +68,7 @@ aws-setup:
 aws-whoami PROFILE="default":
     aws sts get-caller-identity --profile {{PROFILE}}
 
-# ── Infrastructure (Terraform) ────────────────────────────────────────────────
+# ── Infrastructure (OpenTofu) ─────────────────────────────────────────────────
 infra-bootstrap PROFILE="default" REGION="us-east-1":
     cargo xtask infra bootstrap --profile {{PROFILE}} --region {{REGION}}
 infra-plan PROFILE="default":
