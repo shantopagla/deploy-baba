@@ -159,7 +159,7 @@ infra-output PROFILE="default":
 
 # Build Docker image locally
 build-image:
-    cargo xtask deploy docker-build
+    cargo xtask deploy docker
 
 # Build + push image to ECR Public
 push-image PROFILE="default":
