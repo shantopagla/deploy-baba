@@ -1,0 +1,425 @@
+{
+  "_meta": {
+    "schema_version": "1.0.0",
+    "description": "Global agent cache for deploy-baba. Claude reads this on startup to avoid re-exploring unchanged code.",
+    "usage": "Check git.sha against `git rev-parse HEAD`. If match: use cached data. If mismatch: re-scan changed components only, then update this file.",
+    "last_updated": "2026-03-27",
+    "generated_by": "just cache-refresh"
+  },
+  "git": {
+    "sha": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+    "short_sha": "3f5e3e0",
+    "branch": "feat/dashboard",
+    "remote": "git@github.com:shantopagla/deploy-baba.git",
+    "last_commit": "plans for dashboard edit view UI upgrades"
+  },
+  "project": {
+    "name": "deploy-baba",
+    "description": "Zero-cost Rust portfolio and deployment automation platform hosted on AWS Lambda",
+    "workspace_root": "~/portfolio",
+    "version": "0.1.0",
+    "rust_edition": "2021",
+    "rust_msrv": "1.75",
+    "license": "MIT OR Apache-2.0",
+    "status": "~85% complete",
+    "tech_stack": [
+      "rust",
+      "aws-lambda",
+      "axum",
+      "askama",
+      "opentofu",
+      "sqlite-efs",
+      "aws-cognito"
+    ],
+    "task_runner": "just",
+    "adr_count": 6,
+    "plans_index": "plans/INDEX.md"
+  },
+  "workspace": {
+    "members": [
+      "crates/config-core",
+      "crates/config-toml",
+      "crates/config-yaml",
+      "crates/config-json",
+      "crates/api-core",
+      "crates/api-openapi",
+      "crates/api-graphql",
+      "crates/api-grpc",
+      "crates/api-merger",
+      "crates/infra-types",
+      "services/ui",
+      "xtask",
+      "examples/01_multi_format_config",
+      "examples/02_api_spec_generation",
+      "examples/03_spec_merger",
+      "examples/04_infra_types"
+    ]
+  },
+  "crates": {
+    "api-core": {
+      "path": "crates/api-core",
+      "description": "Universal zero-cost trait abstractions for API specification generation",
+      "plan_domain": "W-API",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "serde",
+        "serde_json",
+        "thiserror"
+      ],
+      "dependents": [
+        "api-openapi",
+        "api-graphql",
+        "api-grpc",
+        "api-merger",
+        "services/ui"
+      ],
+      "features": [
+        "default",
+        "validation"
+      ],
+      "role": "Core trait definitions \u2014 implement these traits to generate API specs"
+    },
+    "api-openapi": {
+      "path": "crates/api-openapi",
+      "description": "OpenAPI 3.0 specification generator implementing api-core traits",
+      "plan_domain": "W-APIO",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "api-core",
+        "serde",
+        "serde_json",
+        "thiserror",
+        "utoipa"
+      ],
+      "dependents": [
+        "api-merger",
+        "services/ui"
+      ],
+      "features": [],
+      "role": "OpenAPI 3.0 output format"
+    },
+    "api-graphql": {
+      "path": "crates/api-graphql",
+      "description": "GraphQL schema generator implementing api-core traits",
+      "plan_domain": "W-APIG",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "api-core",
+        "serde",
+        "serde_json",
+        "thiserror"
+      ],
+      "dependents": [
+        "api-merger"
+      ],
+      "features": [],
+      "role": "GraphQL SDL output format"
+    },
+    "api-grpc": {
+      "path": "crates/api-grpc",
+      "description": "gRPC/Protocol Buffer schema generator implementing api-core traits",
+      "plan_domain": "W-APIR",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "api-core",
+        "serde",
+        "serde_json",
+        "thiserror"
+      ],
+      "dependents": [
+        "api-merger"
+      ],
+      "features": [],
+      "role": "Protobuf/gRPC output format"
+    },
+    "api-merger": {
+      "path": "crates/api-merger",
+      "description": "Multi-format API specification merging with conflict resolution",
+      "plan_domain": "W-APIM",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "api-core",
+        "api-openapi",
+        "api-graphql",
+        "api-grpc",
+        "serde",
+        "serde_json",
+        "thiserror"
+      ],
+      "dependents": [
+        "services/ui"
+      ],
+      "features": [],
+      "role": "Aggregates OpenAPI + GraphQL + gRPC specs, resolves conflicts"
+    },
+    "config-core": {
+      "path": "crates/config-core",
+      "description": "Universal zero-cost trait abstractions for configuration parsing",
+      "plan_domain": "W-CFG",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "serde",
+        "thiserror"
+      ],
+      "dependents": [
+        "config-toml",
+        "config-yaml",
+        "config-json",
+        "infra-types"
+      ],
+      "features": [
+        "default",
+        "validation"
+      ],
+      "role": "Core config trait \u2014 implement to support a new config format"
+    },
+    "config-toml": {
+      "path": "crates/config-toml",
+      "description": "TOML implementation of config-core universal traits",
+      "plan_domain": "W-CFGT",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "config-core",
+        "serde",
+        "thiserror",
+        "toml"
+      ],
+      "dependents": [
+        "services/ui"
+      ],
+      "features": [],
+      "role": "TOML format support (used for stack.toml)"
+    },
+    "config-yaml": {
+      "path": "crates/config-yaml",
+      "description": "YAML implementation of config-core universal traits",
+      "plan_domain": "W-CFGY",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "config-core",
+        "serde",
+        "thiserror",
+        "serde_yaml"
+      ],
+      "dependents": [],
+      "features": [],
+      "role": "YAML format support"
+    },
+    "config-json": {
+      "path": "crates/config-json",
+      "description": "JSON implementation of config-core universal traits",
+      "plan_domain": "W-CFGJ",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "config-core",
+        "serde",
+        "thiserror",
+        "serde_json"
+      ],
+      "dependents": [],
+      "features": [],
+      "role": "JSON format support"
+    },
+    "infra-types": {
+      "path": "crates/infra-types",
+      "description": "Cloud-agnostic infrastructure type definitions with SQLite + S3 backup support",
+      "plan_domain": "W-INFR",
+      "status": "DONE",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/lib.rs"
+      ],
+      "dependencies": [
+        "serde",
+        "serde_json",
+        "thiserror"
+      ],
+      "dependents": [
+        "services/ui"
+      ],
+      "features": [
+        "default",
+        "config (optional: config-core)"
+      ],
+      "role": "Shared infrastructure type definitions across cloud providers"
+    }
+  },
+  "services": {
+    "ui": {
+      "path": "services/ui",
+      "crate_name": "deploy-baba-ui",
+      "description": "Portfolio site and live API demo \u2014 the Lambda binary",
+      "plan_domain": "W-UI",
+      "status": "DONE (auth WIP)",
+      "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+      "key_files": [
+        "src/main.rs",
+        "src/router.rs",
+        "src/state.rs",
+        "src/db.rs",
+        "src/auth.rs",
+        "src/middleware.rs",
+        "src/error.rs",
+        "src/openapi.rs"
+      ],
+      "routes_dir": "src/routes",
+      "templates_dir": "src/templates",
+      "framework": "axum 0.7",
+      "runtime": "aws-lambda (lambda_http) + local axum server (dual-mode via ADR-004)",
+      "database": "rusqlite on EFS (ADR-002)",
+      "auth": "AWS Cognito (W-AUTH) \u2014 implicit grant flow, JWKS from env var",
+      "cognito_pool_id": "us-east-1_I7c15vLHE",
+      "open_issues": [
+        "W-AUTH.4.19: OpenAPI security scheme + admin endpoint docs"
+      ]
+    }
+  },
+  "infra": {
+    "path": "infra/",
+    "plan_domain": "W-OTF",
+    "tool": "OpenTofu (migrated from Terraform)",
+    "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+    "status": "WIP \u2014 tofu binary install + smoke test pending",
+    "tf_files": [
+      "main.tf",
+      "variables.tf",
+      "outputs.tf",
+      "lambda.tf",
+      "efs.tf",
+      "s3.tf",
+      "cdn.tf",
+      "iam.tf",
+      "cognito.tf",
+      "eventbridge.tf",
+      "ssm.tf",
+      "build/"
+    ],
+    "aws_region": "us-east-1",
+    "key_resources": [
+      "Lambda Function URL (ADR-003, no API Gateway)",
+      "EFS for SQLite persistence (ADR-002)",
+      "S3 bucket for DB backup",
+      "CloudFront CDN",
+      "Cognito User Pool (us-east-1_I7c15vLHE)",
+      "EventBridge for scheduled backups",
+      "SSM Parameter Store for secrets"
+    ],
+    "open_issues": [
+      "W-OTF.4.1: Install tofu binary",
+      "W-OTF.4.7: Smoke test (BLOCKED on 4.1)",
+      "W-OTF.4.9: Docs"
+    ]
+  },
+  "xtask": {
+    "path": "xtask/",
+    "plan_domain": "W-XT",
+    "description": "Internal CLI plumbing \u2014 NEVER invoke directly, use `just` (ADR-001)",
+    "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b",
+    "status": "WIP",
+    "open_issues": [
+      "W-XT.4.2: Remove or wire up EnvironmentInterpolator (dead code)",
+      "W-XT.4.3: Implement just infra-bootstrap (creates S3 + DynamoDB + SSM)"
+    ]
+  },
+  "database": {
+    "engine": "SQLite (rusqlite 0.32 bundled)",
+    "location": "EFS mount (Lambda) / local file (dev)",
+    "file": "deploy-baba.db",
+    "backup": "S3 via EventBridge schedule",
+    "migrations_path": "services/ui/migrations/",
+    "git_sha_at_scan": "3f5e3e0d1eda53cfeaa6cac9ee123fbc9572fb4b"
+  },
+  "plans": {
+    "index": "plans/INDEX.md",
+    "modules_dir": "plans/modules/",
+    "adr_dir": "plans/adr/",
+    "cross_cutting_dir": "plans/cross-cutting/",
+    "drift_dir": "plans/drift/",
+    "conventions": "plans/CONVENTIONS.md",
+    "module_count": 14,
+    "adr_count": 6,
+    "current_priority": {
+      "P0": [
+        "W-AUTH.4.19 \u2014 OpenAPI security scheme + admin endpoint docs"
+      ],
+      "P1": [
+        "W-XT.4.2 \u2014 Remove or wire up EnvironmentInterpolator",
+        "W-OTF.4.1\u20134.7 \u2014 OpenTofu migration"
+      ],
+      "P2": [
+        "W-DX.3 per-crate READMEs",
+        "W-DX.4 examples",
+        "W-DX.5 integration tests",
+        "W-XT.4.3 infra-bootstrap",
+        "W-QA tests"
+      ],
+      "P3": [
+        "W-PUB.1/2 crates.io publish",
+        "W-UI.4.1 utoipa-rapidoc"
+      ]
+    }
+  },
+  "key_commands": {
+    "dev": "just dev",
+    "quality_gate": "just quality",
+    "deploy": "just deploy <PROFILE>",
+    "local_ui": "just ui",
+    "lambda_build": "just lambda-build",
+    "infra_plan": "just infra-plan",
+    "infra_apply": "just infra-apply",
+    "cache_refresh": "just cache-refresh",
+    "cache_status": "just cache-status"
+  },
+  "adrs": {
+    "ADR-001": "justfile-only interface \u2014 xtask is internal, never invoke directly",
+    "ADR-002": "SQLite on EFS + S3 backup \u2014 no PostgreSQL, no RDS",
+    "ADR-003": "Lambda Function URL \u2014 no API Gateway",
+    "ADR-004": "Dual-mode entry point \u2014 runtime env var detection (local vs Lambda)",
+    "ADR-005": "(see plans/adr/)",
+    "ADR-006": "(see plans/adr/)"
+  },
+  "known_patterns": {
+    "error_handling": "thiserror in library crates, anyhow allowed in binaries/xtask",
+    "async_runtime": "tokio with full features",
+    "config_loading": "stack.toml via config-toml crate (local only, not committed)",
+    "api_generation": "Implement api-core traits, use api-merger to combine formats",
+    "infra_codegen": "Rust types in infra-types drive OpenTofu resource definitions",
+    "template_engine": "askama (compile-time Jinja2-like) + askama_axum integration"
+  }
+}
