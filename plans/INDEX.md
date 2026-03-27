@@ -1,5 +1,5 @@
 # deploy-baba — Plan Index
-**GitHub:** `shantopagla/deploy-baba` | **Last updated:** 2026-03-26
+**GitHub:** `shantopagla/deploy-baba` | **Last updated:** 2026-03-27
 **Source repo:** `~/shanto` (Baba Toolchain, ~85K LOC) | **Status:** ~85% complete
 
 See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming rules.
@@ -38,6 +38,9 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 3. ~~**W-AUTH.4.21**~~ — Fix callback 504: implicit grant + JWKS from env — **DONE** (`allowed_oauth_flows=["implicit"]`; `data "http" cognito_jwks`; `COGNITO_JWKS` env var; HTML callback + `/auth/set-session`; self-sign-up disabled)
 4. **W-AUTH.4.19** — OpenAPI security scheme + admin endpoint docs (`cookieAuth`/`bearerAuth`, 12 admin paths, `ToSchema` on input types)
 5. **W-AUTH.4.22–4.28** — Dashboard master/detail refactoring (summary tiles, slug-routed job detail, inline sub-record editing, type-ahead navigation)
+
+### P0.5 — Live Site Post-Incident
+1. **W-AUTH.POST-FIX** — POST/PUT requests fail through CloudFront OAC (body hash mismatch with `AllViewerExceptHostHeader`). Dashboard edit forms are broken. Investigate Option C (CloudFront custom origin without OAC body signing) before next auth work. See `DRL-2026-03-27-function-url-auth`.
 
 ### P1 — Must Fix (blocking clean CI)
 1. ~~**W-XT.4.1**~~ — CLI naming: 3 justfile mismatches fixed (`fmt`→`format`, `--crate`→`crate` subcommand, `gate`→`all`) — **RESOLVED**
@@ -82,6 +85,7 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 | DRL-2026-03-18-terraform | 2026-03-18 | Terraform first-run gaps | 6 entries |
 | DRL-2026-03-18-xtask | 2026-03-18 | xtask/justfile gaps | 7 entries |
 | DRL-2026-03-25-opentofu | 2026-03-25 | OpenTofu migration audit | 6 entries |
+| DRL-2026-03-27-function-url-auth | 2026-03-27 | Lambda Function URL auth incident + revert | 2 entries + 2 open items (W-AUTH.POST-FIX, DRL-FUA-2) |
 
 ---
 
