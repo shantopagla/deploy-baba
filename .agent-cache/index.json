@@ -248,11 +248,11 @@
     "migrations_path": "services/ui/migrations/"
   },
   "git": {
-    "branch": "feat/dashboard",
-    "last_commit": "implement agent cache for token savings, update ui for dash",
+    "branch": "feat/resume",
+    "last_commit": "feat: Add resume generation xtask + S3 upload + download links",
     "remote": "git@github.com:shantopagla/deploy-baba.git",
-    "sha": "0a8613fd30818b424dbfe44fd4132d6c4b828d0b",
-    "short_sha": "0a8613f"
+    "sha": "06850a9541992f5dded36523053dd4739459b1f8",
+    "short_sha": "06850a9"
   },
   "infra": {
     "aws_region": "us-east-1",
@@ -281,6 +281,7 @@
       "lambda.tf",
       "efs.tf",
       "s3.tf",
+      "s3-assets.tf",
       "cdn.tf",
       "iam.tf",
       "cognito.tf",
