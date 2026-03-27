@@ -44,7 +44,7 @@ It includes global instructions (inlined from `~/CLAUDE.md`) plus project-specif
 
 - Default region: `us-east-1`
 - Uses AWS SSO for authentication
-- Infrastructure managed via Terraform (generated from Rust types)
+- Infrastructure managed via OpenTofu (generated from Rust types)
 - Deployment philosophy: zero-cost first, scale up only when needed
 
 ## Security Notes
@@ -67,7 +67,7 @@ portfolio/
 ├── services/ui/      # Lambda binary (the deployed service)
 ├── xtask/            # Internal CLI — do NOT call directly
 ├── examples/         # 4 example binaries
-├── infra/            # Terraform (Lambda + EFS + S3 + EventBridge + CloudFront)
+├── infra/            # OpenTofu (Lambda + EFS + S3 + EventBridge + CloudFront)
 ├── plans/            # Modular plan system (see plans/INDEX.md)
 ├── stack.toml        # Local-only config (copy from stack.example.toml)
 └── justfile          # The only interface — use `just` commands
@@ -83,7 +83,7 @@ Key commands:
 - `just deploy PROFILE` — quality gate → lambda-build → infra apply
 - `just ui` — run local UI server
 - `just lambda-build` — build Lambda binary (uses cross for aarch64)
-- `just infra-plan` / `just infra-apply` — Terraform plan/apply
+- `just infra-plan` / `just infra-apply` — OpenTofu plan/apply
 
 ### Architecture Decisions
 

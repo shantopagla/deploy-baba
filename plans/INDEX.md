@@ -23,7 +23,8 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 | ui-service | W-UI | `services/ui/` | DONE | utoipa-rapidoc wiring (using inline HTML) |
 | resume | W-RSM | `services/ui/migrations/`, `routes/resume.rs`, `routes/api/jobs.rs`, `routes/api/competencies.rs` | DONE | Functional view grouping (W-RSM.8.1), print CSS (W-RSM.8.3) |
 | xtask | W-XT | `xtask/` | WIP | CLI naming mismatch (`fmt` vs `Format`), `EnvironmentInterpolator` unused |
-| terraform | W-TF | `infra/` | DONE | Fix `is_enabled`→`state`, add `filter {}` to lifecycle rules |
+| terraform | W-TF | `infra/` | SUPERSEDED | Replaced by W-OTF (OpenTofu). W-TF.4.1 and W-TF.4.2 already fixed in code. |
+| opentofu | W-OTF | `infra/` + `xtask/src/infra/` | WIP | Install `tofu` binary (W-OTF.4.1 OPEN); smoke test (W-OTF.4.7 BLOCKED); docs (W-OTF.4.9 TODO) |
 | dx-justfile | W-DX | `justfile`, `docs/`, `examples/` | WIP | Per-crate READMEs, integration tests |
 
 ---
@@ -32,9 +33,10 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 
 ### P1 — Must Fix (blocking clean CI)
 1. ~~**W-XT.4.1**~~ — CLI naming: 3 justfile mismatches fixed (`fmt`→`format`, `--crate`→`crate` subcommand, `gate`→`all`) — **RESOLVED**
-2. **W-TF.4.1** — `infra/eventbridge.tf`: replace `is_enabled = true` with `state = "ENABLED"`
-3. **W-TF.4.2** — `infra/s3.tf`: add `filter {}` to each lifecycle rule
+2. ~~**W-TF.4.1**~~ — `infra/eventbridge.tf`: already uses `state = "ENABLED"` — **RESOLVED** (see DRL-2026-03-25-opentofu)
+3. ~~**W-TF.4.2**~~ — `infra/s3.tf`: `filter {}` already present — **RESOLVED** (see DRL-2026-03-25-opentofu)
 4. **W-XT.4.2** — Remove or wire up `EnvironmentInterpolator` (dead code)
+5. **W-OTF.4.1–4.7** — Migrate infrastructure tooling from Terraform → OpenTofu (see `plans/modules/opentofu.md`)
 
 ### P2 — Quality Gate
 5. **W-DX.3** — Per-crate README files (10 library crates)
@@ -60,6 +62,7 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 | ADR-004 | Dual-Mode Entry Point | W-UI |
 | ADR-005 | Zero-Cost Philosophy | W-CFG, W-API, W-INFR |
 | ADR-006 | EFS + SQLite + S3 Backup | W-INFR, W-TF, W-XT |
+| ADR-007 | OpenTofu Over Terraform | W-OTF, W-XT |
 
 ---
 
@@ -69,6 +72,7 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 |----|------|-------|-------|
 | DRL-2026-03-18-terraform | 2026-03-18 | Terraform first-run gaps | 6 entries |
 | DRL-2026-03-18-xtask | 2026-03-18 | xtask/justfile gaps | 7 entries |
+| DRL-2026-03-25-opentofu | 2026-03-25 | OpenTofu migration audit | 6 entries |
 
 ---
 
@@ -106,7 +110,7 @@ shantopagla/deploy-baba/
 │   └── infra-types/
 ├── services/ui/            # Portfolio site + deployed Lambda binary
 ├── xtask/                  # Internal tooling (called by justfile)
-├── infra/                  # Terraform (Lambda + EFS + S3 + EventBridge)
+├── infra/                  # OpenTofu (Lambda + EFS + S3 + EventBridge)
 ├── examples/               # 4 standalone examples
 ├── docs/                   # aws-setup.md, architecture.md, etc.
 └── plans/                  # This plan system (replaces PLAN.md monolith)
@@ -127,9 +131,9 @@ shantopagla/deploy-baba/
 | 1 | Scaffold (workspace, justfile, stubs) | DONE |
 | 2 | Extract & clean library crates | DONE |
 | 3 | Complete library stubs | DONE |
-| 4 | xtask modules | WIP (CLI naming fix needed) |
+| 4 | xtask modules | WIP (EnvironmentInterpolator dead code) |
 | 5 | UI service | DONE |
-| 6 | Terraform + end-to-end deploy | WIP (TF warnings pending) |
+| 6 | OpenTofu + end-to-end deploy | WIP (Terraform→OpenTofu migration W-OTF) |
 | 7 | Examples + docs | TODO |
 | 8 | Quality pass | TODO |
 | 9 | Publish | TODO |

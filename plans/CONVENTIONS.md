@@ -38,7 +38,8 @@ Example: `DRL-2026-03-18-terraform.md`
 | `INFR` | infra-types | `crates/infra-types/` |
 | `UI` | ui-service | `services/ui/` |
 | `XT` | xtask | `xtask/` |
-| `TF` | terraform | `infra/` |
+| `TF` | terraform | `infra/` (SUPERSEDED by OTF) |
+| `OTF` | opentofu | `infra/` + `xtask/src/infra/` |
 | `DX` | justfile + docs + examples | `justfile`, `docs/`, `examples/` |
 | `PUB` | Publishing | crates.io release |
 

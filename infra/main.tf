@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.6" # OpenTofu first stable release
 
   required_providers {
     aws = {
@@ -34,7 +34,7 @@ locals {
     Project     = var.project_name
     Environment = var.environment
     Terraform   = "true"
-    ManagedBy   = "Terraform"
+    ManagedBy   = "OpenTofu"
   }
 
   lambda_function_name = "${var.project_name}-${var.environment}"

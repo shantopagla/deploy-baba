@@ -96,7 +96,7 @@ flate2        = "1"             # gzip for SQLite backups
 | Tool | Install | Used by |
 |------|---------|---------|
 | `cargo-lambda` | `cargo install cargo-lambda` | `just lambda-build`, `just deploy` |
-| `terraform` | `brew install terraform` | `just infra-*` |
+| `tofu` | `brew install opentofu` | `just infra-*` |
 | `cargo-watch` | `cargo install cargo-watch` | `just ui` (hot reload) |
 | `cargo-audit` | `cargo install cargo-audit` | `just audit`, `just quality` |
 | `cargo-llvm-cov` | `cargo install cargo-llvm-cov` | `just coverage` |
