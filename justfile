@@ -209,61 +209,12 @@ publish:
 
 # Show cache age and whether it's stale vs current HEAD
 cache-status:
-    @CACHED_SHA=$(python3 -c "import json; d=json.load(open('.agent-cache/index.json')); print(d['git']['sha'])" 2>/dev/null || echo "NO_CACHE"); \
-    HEAD_SHA=$(git rev-parse HEAD); \
-    UPDATED=$(python3 -c "import json; d=json.load(open('.agent-cache/index.json')); print(d['_meta']['last_updated'])" 2>/dev/null || echo "unknown"); \
-    if [ "$$CACHED_SHA" = "NO_CACHE" ]; then \
-        echo "❌ No cache found — run: just cache-refresh"; \
-    elif [ "$$CACHED_SHA" = "$$HEAD_SHA" ]; then \
-        echo "✅ Cache is FRESH (last updated: $$UPDATED)"; \
-        echo "   SHA: $$HEAD_SHA"; \
-    else \
-        echo "⚠️  Cache is STALE (cached: $$CACHED_SHA, HEAD: $$HEAD_SHA)"; \
-        echo "   Changed files since cache:"; \
-        git diff --name-only $$CACHED_SHA HEAD 2>/dev/null | sed 's/^/   - /'; \
-        echo "   Run: just cache-refresh"; \
-    fi
+    cargo xtask cache status
 
 # Re-scan the codebase and rewrite .agent-cache/index.json
 cache-refresh:
-    @echo "🔄 Refreshing agent cache..."
-    @HEAD_SHA=$(git rev-parse HEAD); \
-    SHORT_SHA=$(git rev-parse --short HEAD); \
-    BRANCH=$(git branch --show-current); \
-    LAST_COMMIT=$(git log -1 --pretty=%s); \
-    python3 - <<'EOF'
-import json, subprocess, datetime, sys
-
-with open('.agent-cache/index.json', 'r') as f:
-    cache = json.load(f)
-
-head_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
-short_sha = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()
-branch = subprocess.check_output(['git', 'branch', '--show-current']).decode().strip()
-last_commit = subprocess.check_output(['git', 'log', '-1', '--pretty=%s']).decode().strip()
-
-cache['git']['sha'] = head_sha
-cache['git']['short_sha'] = short_sha
-cache['git']['branch'] = branch
-cache['git']['last_commit'] = last_commit
-cache['_meta']['last_updated'] = datetime.date.today().isoformat()
-cache['_meta']['generated_by'] = 'just cache-refresh'
-
-# Mark all component SHAs as current (shallow refresh — SHA-based staleness only)
-for crate in cache.get('crates', {}).values():
-    crate['git_sha_at_scan'] = head_sha
-for svc in cache.get('services', {}).values():
-    svc['git_sha_at_scan'] = head_sha
-cache.get('infra', {})['git_sha_at_scan'] = head_sha
-cache.get('xtask', {})['git_sha_at_scan'] = head_sha
-cache.get('database', {})['git_sha_at_scan'] = head_sha
-
-with open('.agent-cache/index.json', 'w') as f:
-    json.dump(cache, f, indent=2)
-
-print(f"✅ Cache refreshed → SHA: {short_sha} ({branch})")
-EOF
+    cargo xtask cache refresh
 
 # Delete the cache to force a full re-scan next session
 cache-clear:
-    @rm -f .agent-cache/index.json && echo "🗑️  Cache cleared — Claude will do a full re-scan next session"
+    cargo xtask cache clear
