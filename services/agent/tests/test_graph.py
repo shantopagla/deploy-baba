@@ -31,13 +31,11 @@ def test_agent_has_tools(agent) -> None:
     """The agent should have the expected tools registered."""
     tool_names = set(agent._function_toolset.tools.keys())
     assert "generate_html" in tool_names
-    assert "convert_to_pdf" in tool_names
-    assert "upload_and_link" in tool_names
 
 
-def test_agent_has_three_tools(agent) -> None:
-    """The agent should have exactly 3 tools."""
-    assert len(agent._function_toolset.tools.keys()) == 3
+def test_agent_has_one_tool(agent) -> None:
+    """The agent should only generate draft HTML."""
+    assert len(agent._function_toolset.tools.keys()) == 1
 
 
 def test_output_type_is_cover_letter(agent) -> None:
@@ -54,7 +52,6 @@ def test_cover_letter_output_schema() -> None:
     """CoverLetterOutput should have the expected fields."""
     fields = CoverLetterOutput.model_fields
     assert "html" in fields
-    assert "download_url" in fields
     assert "summary" in fields
     assert "grounding_citations" in fields
 

@@ -17,6 +17,19 @@ export interface WorkflowResult {
   summary: string
 }
 
+interface JobCreateResponse {
+  job_id: string
+  status: AgentStatus
+}
+
+interface JobStatusResponse {
+  job_id: string
+  status: AgentStatus
+  events: Array<{ agent: AgentName; status: AgentStatus; detail?: string }>
+  result?: WorkflowResult | null
+  error?: string | null
+}
+
 const INITIAL_AGENTS: AgentState[] = [
   {
     name: 'preground',
@@ -44,27 +57,6 @@ const INITIAL_AGENTS: AgentState[] = [
   },
 ]
 
-interface SSEEvent {
-  event: string
-  data: string
-}
-
-function parseSSELines(text: string): SSEEvent[] {
-  const events: SSEEvent[] = []
-  const blocks = text.split('\n\n')
-  for (const block of blocks) {
-    if (!block.trim()) continue
-    let event = ''
-    let data = ''
-    for (const line of block.split('\n')) {
-      if (line.startsWith('event: ')) event = line.slice(7)
-      else if (line.startsWith('data: ')) data = line.slice(6)
-    }
-    if (event && data) events.push({ event, data })
-  }
-  return events
-}
-
 export function useAgentStream() {
   const [agents, setAgents] = useState<AgentState[]>(INITIAL_AGENTS)
   const [result, setResult] = useState<WorkflowResult | null>(null)
@@ -87,51 +79,53 @@ export function useAgentStream() {
     setIsStreaming(true)
 
     try {
-      const res = await fetch('/api/v1/agent/cover-letter/stream', {
+      const createRes = await fetch('/api/v1/agent/cover-letter/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ job_description: jobDescription }),
         signal: controller.signal,
       })
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.detail ?? `HTTP ${res.status}`)
+      if (!createRes.ok) {
+        const body = await createRes.json().catch(() => ({}))
+        throw new Error(body.detail ?? `HTTP ${createRes.status}`)
       }
 
-      const reader = res.body?.getReader()
-      if (!reader) throw new Error('No response body')
-
-      const decoder = new TextDecoder()
-      let buffer = ''
+      const created = (await createRes.json()) as JobCreateResponse
+      const started = Date.now()
+      const maxWaitMs = 5 * 60 * 1000
 
       while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+        if (Date.now() - started > maxWaitMs) {
+          throw new Error('Cover letter generation did not finish within 5 minutes')
+        }
 
-        buffer += decoder.decode(value, { stream: true })
-        const lastDoubleNewline = buffer.lastIndexOf('\n\n')
-        if (lastDoubleNewline === -1) continue
-        const complete = buffer.slice(0, lastDoubleNewline + 2)
-        buffer = buffer.slice(lastDoubleNewline + 2)
-        const events = parseSSELines(complete)
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        if (controller.signal.aborted) return
 
-        for (const evt of events) {
-          if (evt.event === 'agent') {
-            const payload = JSON.parse(evt.data)
-            setAgents(prev =>
-              prev.map(a =>
-                a.name === payload.agent
-                  ? { ...a, status: payload.status, detail: payload.detail }
-                  : a
-              )
-            )
-          } else if (evt.event === 'result') {
-            setResult(JSON.parse(evt.data))
-          } else if (evt.event === 'error') {
-            const payload = JSON.parse(evt.data)
-            setError(payload.message)
-          }
+        const statusRes = await fetch(`/api/v1/agent/cover-letter/jobs/${created.job_id}`, {
+          signal: controller.signal,
+        })
+
+        if (!statusRes.ok) {
+          const body = await statusRes.json().catch(() => ({}))
+          throw new Error(body.detail ?? `HTTP ${statusRes.status}`)
+        }
+
+        const status = (await statusRes.json()) as JobStatusResponse
+        setAgents(prev =>
+          prev.map(agent => {
+            const latest = [...status.events].reverse().find(event => event.agent === agent.name)
+            return latest ? { ...agent, status: latest.status, detail: latest.detail } : agent
+          })
+        )
+
+        if (status.status === 'completed' && status.result) {
+          setResult(status.result)
+          break
+        }
+        if (status.status === 'failed') {
+          throw new Error(status.error ?? 'Cover letter generation failed')
         }
       }
     } catch (err) {

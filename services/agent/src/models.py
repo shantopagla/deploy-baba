@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -24,9 +26,6 @@ class CoverLetterResponse(BaseModel):
     summary: str = Field(description="Brief summary of how the cover letter was tailored")
 
 
-# SSE Event models for agent streaming
-
-
 class AgentEvent(BaseModel):
     """SSE event for agent status updates."""
 
@@ -35,6 +34,25 @@ class AgentEvent(BaseModel):
     )
     status: str = Field(description="Agent status: pending, running, completed, or failed")
     detail: str | None = Field(default=None, description="Human-readable status detail")
+
+
+class CoverLetterJobCreateResponse(BaseModel):
+    job_id: str = Field(description="Server-generated cover letter job ID")
+    status: Literal["pending", "running", "completed", "failed"] = Field(
+        description="Current job status"
+    )
+
+
+class CoverLetterJobStatus(BaseModel):
+    job_id: str = Field(description="Server-generated cover letter job ID")
+    status: Literal["pending", "running", "completed", "failed"] = Field(
+        description="Current job status"
+    )
+    events: list[AgentEvent] = Field(default_factory=list, description="Workflow progress events")
+    result: CoverLetterResponse | None = Field(
+        default=None, description="Final cover letter result"
+    )
+    error: str | None = Field(default=None, description="Failure message")
 
 
 class LinkedInAuthUrl(BaseModel):

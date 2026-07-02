@@ -9,6 +9,7 @@ pub mod docker;
 pub mod ecr;
 pub mod ecs;
 pub mod lambda;
+pub mod promote;
 pub mod spa;
 
 #[derive(Subcommand)]
@@ -80,6 +81,15 @@ pub enum DeployAction {
         #[arg(long, default_value = "prod")]
         env: String,
     },
+    /// Promote dev artifacts to prod (Lambda code + SPA, no rebuild)
+    Promote {
+        /// AWS profile
+        #[arg(long)]
+        profile: Option<String>,
+        /// Skip release tag creation
+        #[arg(long)]
+        skip_tag: bool,
+    },
 }
 
 pub async fn execute(action: DeployAction) -> anyhow::Result<()> {
@@ -117,6 +127,9 @@ pub async fn execute(action: DeployAction) -> anyhow::Result<()> {
                     }
                 };
             spa::deploy_spa(profile, env_cfg, &sha, skip_wait).await
+        }
+        DeployAction::Promote { profile, skip_tag } => {
+            promote::promote(profile, skip_tag).await
         }
     };
 

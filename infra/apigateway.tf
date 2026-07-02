@@ -195,6 +195,18 @@ resource "aws_apigatewayv2_route" "agent_cover_letter_stream" {
   target    = "integrations/${aws_apigatewayv2_integration.agent.id}"
 }
 
+resource "aws_apigatewayv2_route" "agent_cover_letter_jobs_create" {
+  api_id    = aws_apigatewayv2_api.contact.id
+  route_key = "POST /api/v1/agent/cover-letter/jobs"
+  target    = "integrations/${aws_apigatewayv2_integration.agent.id}"
+}
+
+resource "aws_apigatewayv2_route" "agent_cover_letter_jobs_get" {
+  api_id    = aws_apigatewayv2_api.contact.id
+  route_key = "GET /api/v1/agent/cover-letter/jobs/{job_id}"
+  target    = "integrations/${aws_apigatewayv2_integration.agent.id}"
+}
+
 resource "aws_lambda_permission" "apigw_agent" {
   statement_id  = "AllowAPIGatewayAgentInvoke"
   action        = "lambda:InvokeFunction"

@@ -155,6 +155,10 @@ lambda-deploy-all ENV="prod":
     just agent-deploy {{ ENV }}
     just pdf-deploy {{ ENV }}
 
+# Promote dev artifacts to prod (Lambda code + SPA copy, no rebuild)
+promote:
+    just aws-check {{ PROFILE }} && cargo xtask deploy promote --profile {{ PROFILE }}
+
 # Build the read-only context bundle consumed by the private cloud MCP gateway
 mcp-context-build:
     #!/usr/bin/env bash
@@ -609,6 +613,8 @@ dev-stack:
         (cd services/agent && \
             S3_ENDPOINT_URL=http://localhost:5555 \
             ARTIFACTS_BUCKET=deploy-baba-artifacts \
+            AGENT_JOB_STORE=memory \
+            AGENT_TIMEOUT=240 \
             AWS_ACCESS_KEY_ID=testing \
             AWS_SECRET_ACCESS_KEY=testing \
             UI_BASE_URL=http://localhost:3001 \
