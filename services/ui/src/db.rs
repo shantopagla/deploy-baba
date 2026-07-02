@@ -188,11 +188,18 @@ impl Db {
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
 
         let integrity: String = conn.query_row("PRAGMA quick_check;", [], |row| row.get(0))?;
-        if integrity != "ok" {
-            anyhow::bail!(
-                "SQLite integrity check failed for {path}: {integrity}. Delete the file and restart to recreate from migrations."
+        let conn = if integrity != "ok" {
+            tracing::warn!(
+                "SQLite integrity check failed for {path}: {integrity} — deleting corrupt DB and recreating from migrations"
             );
-        }
+            drop(conn);
+            std::fs::remove_file(path)?;
+            let conn = Connection::open(path)?;
+            conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
+            conn
+        } else {
+            conn
+        };
 
         let db = Db {
             conn: Mutex::new(conn),

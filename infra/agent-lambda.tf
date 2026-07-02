@@ -17,10 +17,10 @@ resource "aws_lambda_function" "agent" {
   filename      = var.agent_lambda_code_path
   function_name = "${local.lambda_function_name}-agent"
   role          = aws_iam_role.agent_lambda_execution.arn
-  handler       = "handler.handler"
+  handler       = "handler.lambda_handler"
   runtime       = "python3.13"
-  memory_size   = 512
-  timeout       = 120
+  memory_size   = 1024
+  timeout       = 300
   architectures = ["arm64"]
 
   source_code_hash = fileexists(var.agent_lambda_code_path) ? filebase64sha256(var.agent_lambda_code_path) : null
@@ -34,6 +34,9 @@ resource "aws_lambda_function" "agent" {
       UI_LAMBDA_NAME        = aws_lambda_function.baba.function_name
       PDF_LAMBDA_NAME       = length(aws_lambda_function.pdf) > 0 ? aws_lambda_function.pdf[0].function_name : ""
       ARTIFACTS_BUCKET      = aws_s3_bucket.assets.id
+      AGENT_TIMEOUT         = "240"
+      AGENT_JOB_STORE       = "s3"
+      AGENT_JOBS_PREFIX     = "agent-jobs/"
       AWS_REGION_OVERRIDE   = var.region
     }
   }
@@ -93,6 +96,12 @@ resource "aws_iam_role_policy" "agent_lambda_permissions" {
         Resource = length(aws_lambda_function.pdf) > 0 ? aws_lambda_function.pdf[0].arn : "*"
       },
       {
+        Sid      = "InvokeSelf"
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
+        Resource = "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${local.lambda_function_name}-agent"
+      },
+      {
         Sid    = "ReadSecrets"
         Effect = "Allow"
         Action = ["secretsmanager:GetSecretValue"]
@@ -109,6 +118,15 @@ resource "aws_iam_role_policy" "agent_lambda_permissions" {
           "s3:GetObject"
         ]
         Resource = "${aws_s3_bucket.assets.arn}/cover-letters/*"
+      },
+      {
+        Sid    = "S3AgentJobs"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject"
+        ]
+        Resource = "${aws_s3_bucket.assets.arn}/agent-jobs/*"
       }
     ]
   })

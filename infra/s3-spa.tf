@@ -35,10 +35,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "spa" {
 
     filter {}
 
-    expiration {
-      days = 14
-    }
-
     noncurrent_version_expiration {
       noncurrent_days = 1
     }
