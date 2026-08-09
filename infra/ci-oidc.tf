@@ -155,18 +155,18 @@ resource "aws_iam_role_policy" "ci_deploy_prod" {
         Resource = "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-prod*"
       },
       {
-        Sid      = "ReadDeployConfig"
-        Effect   = "Allow"
-        Action   = "secretsmanager:GetSecretValue"
+        Sid    = "ReadDeployConfig"
+        Effect = "Allow"
+        Action = "secretsmanager:GetSecretValue"
         Resource = [
           "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/prod/deploy-config*",
           "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/dev/deploy-config*"
         ]
       },
       {
-        Sid    = "ReadDevLambda"
-        Effect = "Allow"
-        Action = ["lambda:GetFunction"]
+        Sid      = "ReadDevLambda"
+        Effect   = "Allow"
+        Action   = ["lambda:GetFunction"]
         Resource = "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-dev*"
       },
       {

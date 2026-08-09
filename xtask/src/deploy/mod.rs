@@ -128,9 +128,7 @@ pub async fn execute(action: DeployAction) -> anyhow::Result<()> {
                 };
             spa::deploy_spa(profile, env_cfg, &sha, skip_wait).await
         }
-        DeployAction::Promote { profile, skip_tag } => {
-            promote::promote(profile, skip_tag).await
-        }
+        DeployAction::Promote { profile, skip_tag } => promote::promote(profile, skip_tag).await,
     };
 
     if let Err(ref e) = result {

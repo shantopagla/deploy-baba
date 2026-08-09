@@ -19,7 +19,10 @@ struct EnvConfig {
 }
 
 impl EnvConfig {
-    async fn from_secrets_manager(config: &aws_config::SdkConfig, env: &str) -> anyhow::Result<Self> {
+    async fn from_secrets_manager(
+        config: &aws_config::SdkConfig,
+        env: &str,
+    ) -> anyhow::Result<Self> {
         let client = SmClient::new(config);
         let secret_name = format!("deploy-baba/{env}/deploy-config");
         let resp = client
@@ -76,11 +79,7 @@ pub async fn promote(profile: Option<String>, skip_tag: bool) -> anyhow::Result<
     Ok(())
 }
 
-async fn promote_lambda(
-    client: &LambdaClient,
-    dev_fn: &str,
-    prod_fn: &str,
-) -> anyhow::Result<()> {
+async fn promote_lambda(client: &LambdaClient, dev_fn: &str, prod_fn: &str) -> anyhow::Result<()> {
     println!("   Promoting Lambda: {} → {}", dev_fn, prod_fn);
 
     let resp = client
@@ -122,12 +121,11 @@ async fn promote_lambda(
     Ok(())
 }
 
-async fn promote_spa(
-    client: &S3Client,
-    dev_bucket: &str,
-    prod_bucket: &str,
-) -> anyhow::Result<()> {
-    println!("   Promoting SPA: s3://{} → s3://{}", dev_bucket, prod_bucket);
+async fn promote_spa(client: &S3Client, dev_bucket: &str, prod_bucket: &str) -> anyhow::Result<()> {
+    println!(
+        "   Promoting SPA: s3://{} → s3://{}",
+        dev_bucket, prod_bucket
+    );
 
     // List all objects in dev bucket
     let mut continuation_token: Option<String> = None;
@@ -208,7 +206,10 @@ async fn promote_spa(
     }
 
     let dev_set: std::collections::HashSet<&str> = dev_keys.iter().map(|s| s.as_str()).collect();
-    let stale: Vec<&String> = prod_keys.iter().filter(|k| !dev_set.contains(k.as_str())).collect();
+    let stale: Vec<&String> = prod_keys
+        .iter()
+        .filter(|k| !dev_set.contains(k.as_str()))
+        .collect();
 
     if !stale.is_empty() {
         println!("   Deleting {} stale objects from prod", stale.len());
