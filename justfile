@@ -699,11 +699,21 @@ build-image:
 push-image PROFILE="default" IMAGE="deploy-baba-ui:latest":
     just aws-check {{ PROFILE }} && cargo xtask deploy push --image {{ IMAGE }} --profile {{ PROFILE }}
 
-# Full deploy: quality gate → zip build → Lambda update (zip-based Lambda, ADR-003)
+# Full deploy: quality gate → all Lambdas + agent + mcp-cloud → wait → SPA → resume → RAG.
+# `deploy` is the canonical "ship everything" command — every path (frontend + all
+# backend services) is deployed and CloudFront is invalidated. Use `deploy-fast` /
+# `lambda-deploy` for narrow, explicit partial pushes instead.
 deploy ENV="prod":
-    just quality && just lambda-deploy {{ ENV }}
+    just quality
+    just lambda-deploy-all {{ ENV }}
+    just agent-deploy {{ ENV }}
+    just mcp-cloud-deploy {{ ENV }}
+    just lambda-wait {{ ENV }}
+    just spa-deploy {{ ENV }}
+    just resume-upload
+    just rag-sync {{ ENV }}
 
-# Deploy without quality gate (fast path)
+# Deploy without quality gate (fast path) — UI Lambda code only, no SPA/other services
 deploy-fast ENV="prod":
     just lambda-deploy {{ ENV }}
 
@@ -718,29 +728,23 @@ lambda-wait ENV="prod":
 # SPA-only deploy: build → S3 sync → sync-spa invoke → /health (steps 3–6)
 
 # Requires: SPA_BUCKET, UI_FN_NAME, FN_URL env vars (or set via infra outputs)
-spa-deploy:
-    just aws-check {{ PROFILE }} && cargo xtask deploy spa --profile {{ PROFILE }} --sha "$(git rev-parse HEAD)"
+spa-deploy ENV="prod":
+    just aws-check {{ PROFILE }} && cargo xtask deploy spa --profile {{ PROFILE }} --env {{ ENV }} --sha "$(git rev-parse HEAD)"
 
 # Full pipeline: quality → Lambda → wait → SPA build → S3 sync → sync-spa → /health
+# (UI Lambda + SPA only — skips the other 8 microservice Lambdas; use `deploy` for those)
 
 # Pass TAG=1 to also create a dev-vX.Y.Z git tag (mirrors deploy-dev.yml)
 deploy-full ENV="prod" TAG="":
     just quality
     just lambda-deploy {{ ENV }}
     just lambda-wait {{ ENV }}
-    just spa-deploy
+    just spa-deploy {{ ENV }}
     {{ if TAG != "" { "just release-tag dev push" } else { "echo 'Skipping dev tag — pass TAG=1 to enable'" } }}
 
-# Deploy all services + SPA + resume + RAG (full production push)
+# Deploy all services + SPA + resume + RAG (full production push) — alias for `deploy`
 deploy-all ENV="prod":
-    just quality
-    just lambda-deploy-all {{ ENV }}
-    just agent-deploy {{ ENV }}
-    just mcp-cloud-deploy {{ ENV }}
-    just lambda-wait {{ ENV }}
-    just spa-deploy
-    just resume-upload
-    just rag-sync {{ ENV }}
+    just deploy {{ ENV }}
 
 # ── Database (SQLite + S3) ───────────────────────────────────────────────────
 
