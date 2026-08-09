@@ -50,6 +50,22 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo doc --no-deps --workspace
 
+  challenges:
+    name: Challenges Content Drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Seed a fresh DB from migrations
+        run: |
+          rm -f /tmp/challenges-ci.db
+          sqlite3 /tmp/challenges-ci.db < <(cat services/ui/migrations/*.sql)
+      - name: Fail if content/challenges/*.md drifted from committed migrations
+        run: cargo run -q -p xtask -- challenges diff --db-path /tmp/challenges-ci.db --content-dir content/challenges
+
   tofu:
     name: OpenTofu
     runs-on: ubuntu-latest

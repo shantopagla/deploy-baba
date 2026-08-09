@@ -77,9 +77,6 @@ pub const ALL_MODELS: &[(&str, ModelFactory)] = &[
     ("Challenge", || {
         serde_json::to_value(Challenge::example()).expect("Challenge example")
     }),
-    ("ChallengeInput", || {
-        serde_json::to_value(ChallengeInput::example()).expect("ChallengeInput example")
-    }),
     // contact
     ("ChallengeResponse", || {
         serde_json::to_value(ChallengeResponse::example()).expect("ChallengeResponse example")

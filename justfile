@@ -58,7 +58,7 @@ dev:
 
 # Full quality gate (fmt + lint + test + coverage floors + audit + HCL fmt check + agent)
 quality:
-    just web-types-offline && cargo xtask quality all && just web-coverage && just agent-lint && just agent-test && just agent-build && just mcp-build && just mcp-smoke && just mcp-rag-smoke && just mcp-cloud-build && just rag-index-embed && tofu fmt -check -recursive infra/
+    just web-types-offline && cargo xtask quality all && just web-coverage && just agent-lint && just agent-test && just agent-build && just mcp-build && just mcp-smoke && just mcp-rag-smoke && just mcp-cloud-build && just challenges-diff && just rag-index-embed && tofu fmt -check -recursive infra/
 
 # Build everything: all Rust Lambda zips + SPA + agent package + MCP gateway bundle
 build: lambda-build-all web-build agent-build mcp-cloud-build
@@ -583,6 +583,10 @@ dev-stack:
         sleep 1
     done
 
+    # Refresh the challenges cache from content/challenges/*.md now that migration 038
+    # (content_sha column) has been applied by the API server's startup migration runner.
+    just challenges-sync || echo "⚠️  challenges-sync failed — dashboard may show stale challenge content"
+
     # Start local S3 emulator (moto) for agent artifact storage
     MOTO_PID=""
     if command -v uv &>/dev/null; then
@@ -800,6 +804,20 @@ resume-upload PROFILE="default":
 # Full pipeline: generate + upload
 resume PROFILE="default" DB="deploy-baba.db":
     just resume-generate {{ DB }} && just resume-upload {{ PROFILE }}
+
+# ── Challenges Content (content/challenges/*.md is the source of truth — ADR-036) ───────────
+
+# Sync content/challenges/*.md into SQLite (upsert changed, prune removed). Idempotent.
+challenges-sync DB="deploy-baba.db":
+    cargo xtask challenges sync --db-path {{ DB }} --content-dir content/challenges
+
+# Report drift between content/challenges/*.md and SQLite without writing (exits non-zero on drift)
+challenges-diff DB="deploy-baba.db":
+    cargo xtask challenges diff --db-path {{ DB }} --content-dir content/challenges
+
+# Generate a migration file for content/challenges/*.md changes (the only channel that reaches prod)
+challenges-migration:
+    cargo xtask challenges gen-migration --content-dir content/challenges --migrations-dir services/ui/migrations
 
 # ── RAG ──────────────────────────────────────────────────────────────────────
 

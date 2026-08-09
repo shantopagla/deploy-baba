@@ -32,7 +32,7 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 | about | W-ABT | `services/ui/src/routes/api/about.rs`, `services/ui/migrations/008-009` | DONE | Templates deleted (D.5); data served via JSON API to SPA |
 | social-links | W-SL | `services/ui/src/db.rs`, `services/ui/src/routes/api/admin.rs`, `services/ui/migrations/010-011` | DONE | Templates deleted (D.5); nav loop now in React Layout.tsx |
 | contact-form | W-CTF | `services/email/`, `services/ui/src/routes/contact.rs`, `infra/ses.tf`, `infra/email-lambda.tf`, `infra/apigateway.tf` | DONE | e2e test (W-CTF.4.12) — smoke tests created in services/ui/tests/contact_smoke.rs |
-| challenges | W-CHL | `services/ui/src/routes/api/challenges.rs`, `services/ui/migrations/022`, `web/src/routes/dashboard/Challenges.tsx` | DONE | Basic CRUD DONE; RAG corpus integration DONE; admin UI DONE; public pages DONE (W-CHL.4.11); search/filter DONE (W-CHL.4.13); evaluation metrics deferred (W-CHL.4.12) |
+| challenges | W-CHL | `content/challenges/*.md` (source of truth, ADR-036), `xtask/src/challenges.rs`, `services/ui/src/routes/api/challenges.rs`, `services/ui/migrations/022`+`038` | DONE | RAG corpus integration DONE; public pages DONE (W-CHL.4.11); search/filter DONE (W-CHL.4.13); markdown SSOT pivot DONE 2026-07-08 (W-CHL.4.14–4.21, ADR-036) — admin CRUD removed, dashboard now read-only; evaluation metrics deferred (W-CHL.4.12) |
 | secrets-manager | W-SEC | `xtask/src/secret.rs`, `infra/secrets.tf`, `infra/vpc-endpoints.tf`, `services/ui/src/routes/contact.rs` | DONE | Deploy: `just infra-apply` + `just secret-put pow-secret $(openssl rand -hex 32)` + `just lambda-deploy` |
 | dashboard-sync | W-SYNC | `plans/modules/dashboard-sync.md`, `services/ui/migrations/`, `services/ui/src/db.rs`, `services/ui/src/routes/api/admin.rs`, `.claude/skills/sync-dashboard-data/` | DONE | 4.1–4.5 complete; zero drift on first run 2026-04-08; .4.6/.4.7 deferred (on-demand) |
 | llm-core + llm-anthropic + llm-openai | W-LLM | `crates/llm-core/`, `crates/llm-anthropic/`, `crates/llm-openai/` | DONE | W-LLM.4.1–4.16 all DONE; LlmProvider + EmbeddingProvider traits; Anthropic + OpenAI adapters; tool-dispatch loop (ADR-023) |
@@ -123,7 +123,7 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 15. ~~**W-CTF.4.11 + W-SEC**~~ — Migrate `POW_SECRET` from Lambda env var → AWS Secrets Manager + xtask secret commands — **DONE** (code complete; `just infra-apply` + `just secret-put pow-secret ...` + `just lambda-deploy` still needed)
 16. ~~**W-CTF.4.13**~~ — Acknowledgement email to submitter — **DONE** (SES production access granted 2026-04-08; `SES_ACK_FROM_EMAIL` restored; external Gmail delivery verified. See `DRL-2026-04-07-ses-sandbox-ack` (RESOLVED).)
 17. ~~**W-CHL.4.1–4.9**~~ — Challenges feature + admin CRUD + RAG corpus integration — **DONE** (migration 022, API routes, admin dashboard, RAG 7th corpus integration)
-18. **W-CHL.4.10–4.13** — Challenges remaining features — TODO (admin edit/delete forms, public portfolio pages, evaluation metrics, search/filter)
+18. ~~**W-CHL.4.10–4.13, 4.14–4.21**~~ — Challenges remaining features + markdown SSOT pivot — **DONE** (public portfolio pages, search/filter, then content/challenges/*.md source-of-truth pivot 2026-07-08 per ADR-036 — admin CRUD removed; evaluation metrics (W-CHL.4.12) still deferred)
 19. **W-LLM.4.1–4.4** — LLM provider abstraction + Claude reference adapter (see `plans/modules/llm-core.md`) — TODO
 18. **W-RST.4.1–4.10** — AI Resume Tailor pipeline on W-LLM (see `plans/modules/resume-tailor.md`) — TODO; BLOCKED-on-deploy for items 4.3/4.4/4.5 until W-SEC deployed + `anthropic-api-key` in SM
 
@@ -203,6 +203,7 @@ See `plans/CONVENTIONS.md` for notation system, domain codes, and file naming ru
 | ADR-033 | ~~Cover Letter Agent Architecture~~ — **Superseded by ADR-035**. LangGraph ReAct agent with 4 tools | W-AGT, W-RST, W-RAG, W-LLM, W-WEB, W-UI |
 | ADR-034 | Agent Lambda Deployment Pattern — Python Lambda (arm64, no VPC); Mangum handler; uv build; service-protocol invoke from UI Lambda | W-AGT, W-OTF, W-CI, W-DX |
 | ADR-035 | PydanticAI Agent Migration — replaces LangGraph/LangChain with pre-grounded PydanticAI agent; Haiku default; 400-2000x cost reduction | W-AGT, W-WEB |
+| ADR-036 | Challenges Content as Markdown Source of Truth — `content/challenges/*.md` is canonical; SQLite is a `content_sha`-cached read cache; `xtask challenges sync/diff/gen-migration`; dashboard CRUD removed | W-CHL, W-RAG, W-SYNC, W-UI, W-WEB |
 
 ---
 

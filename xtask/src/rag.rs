@@ -197,6 +197,13 @@ async fn ingest(db_path: &Path, repo_root: &Path, include_cache: bool) -> anyhow
 
     // ── Portfolio data corpus ────────────────────────────────────────
     {
+        // content/challenges/*.md is the source of truth (ADR-036) — refresh the SQLite
+        // cache from disk before chunking so RAG never indexes stale challenge prose.
+        let challenges_content_dir = repo_root.join("content/challenges");
+        if let Err(e) = crate::challenges::sync(db_path, &challenges_content_dir) {
+            println!("  Warning: challenges content sync failed: {e}");
+        }
+
         println!("  Indexing portfolio data...");
         let portfolio_conn = Connection::open(db_path)
             .with_context(|| format!("Failed to open portfolio DB: {}", db_path.display()))?;
