@@ -3,6 +3,16 @@ output "function_url" {
   value       = aws_lambda_function_url.baba.function_url
 }
 
+output "auth_function_url" {
+  description = "Auth Lambda Function URL — read from the dev workspace to bootstrap dev_auth_lambda_url"
+  value       = aws_lambda_function_url.auth.function_url
+}
+
+output "contact_api_endpoint" {
+  description = "Contact API Gateway invoke endpoint — read from the dev workspace to bootstrap dev_apigw_endpoint"
+  value       = aws_apigatewayv2_api.contact.api_endpoint
+}
+
 output "lambda_arn" {
   description = "ARN of the Lambda function"
   value       = aws_lambda_function.baba.arn
@@ -51,6 +61,11 @@ output "cloudfront_distribution_id" {
 output "cloudfront_domain_name" {
   description = "CloudFront distribution domain name"
   value       = local.is_prod_cdn ? aws_cloudfront_distribution.main[0].domain_name : ""
+}
+
+output "dev_cloudfront_distribution_id" {
+  description = "Dev CloudFront distribution ID — paste into terraform.tfvars as dev_cloudfront_id, then `just infra-apply dev`"
+  value       = local.is_prod_cdn ? aws_cloudfront_distribution.dev[0].id : ""
 }
 
 output "site_url" {
