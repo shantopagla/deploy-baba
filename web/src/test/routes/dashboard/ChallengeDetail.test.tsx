@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '../../utils/test-render'
-import userEvent from '@testing-library/user-event'
 import ChallengeDetail from '../../../routes/dashboard/ChallengeDetail'
 import DashboardLayout from '../../../routes/dashboard/Layout'
 
@@ -9,7 +8,7 @@ vi.mock('../../../hooks/useAuth', () => ({
 }))
 
 describe('ChallengeDetail', () => {
-  it('renders new challenge form', () => {
+  it('renders a placeholder for the removed "new" form (ADR-036)', () => {
     render(
       <DashboardLayout>
         <ChallengeDetail />
@@ -17,139 +16,10 @@ describe('ChallengeDetail', () => {
       { router: 'memory', route: '/dashboard/challenges/new', routes: [{ path: '/dashboard/challenges/:id' }] }
     )
     expect(screen.getByText('New Challenge')).toBeInTheDocument()
+    expect(screen.getByText(/content\/challenges\/<slug>\.md/)).toBeInTheDocument()
   })
 
-  it('renders form fields', () => {
-    render(
-      <DashboardLayout>
-        <ChallengeDetail />
-      </DashboardLayout>,
-      { router: 'memory', route: '/dashboard/challenges/new', routes: [{ path: '/dashboard/challenges/:id' }] }
-    )
-    expect(screen.getByLabelText('slug')).toBeInTheDocument()
-    expect(screen.getByLabelText('title')).toBeInTheDocument()
-    expect(screen.getByLabelText('short description')).toBeInTheDocument()
-    expect(screen.getByLabelText('Description')).toBeInTheDocument()
-    expect(screen.getByLabelText('tech stack')).toBeInTheDocument()
-    expect(screen.getByLabelText('category')).toBeInTheDocument()
-    expect(screen.getByLabelText('url')).toBeInTheDocument()
-    expect(screen.getByLabelText('Featured on homepage')).toBeInTheDocument()
-    expect(screen.getByLabelText('Sort order')).toBeInTheDocument()
-  })
-
-  it('renders save button', () => {
-    render(
-      <DashboardLayout>
-        <ChallengeDetail />
-      </DashboardLayout>,
-      { router: 'memory', route: '/dashboard/challenges/new', routes: [{ path: '/dashboard/challenges/:id' }] }
-    )
-    expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
-  })
-
-  it('renders delete button for existing challenge', async () => {
-    render(
-      <DashboardLayout>
-        <ChallengeDetail />
-      </DashboardLayout>,
-      { router: 'memory', route: '/dashboard/challenges/1', routes: [{ path: '/dashboard/challenges/:id' }] }
-    )
-    await waitFor(() => {
-      expect(screen.queryByText('Loading…')).not.toBeInTheDocument()
-    })
-    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
-  })
-
-  it('submits form and navigates back', async () => {
-    global.fetch = vi.fn(() => Promise.resolve(new Response(null, { status: 200 })))
-    render(
-      <DashboardLayout>
-        <ChallengeDetail />
-      </DashboardLayout>,
-      { router: 'memory', route: '/dashboard/challenges/new', routes: [{ path: '/dashboard/challenges/:id' }] }
-    )
-    const user = userEvent.setup()
-
-    await user.type(screen.getByLabelText('slug'), 'test-challenge')
-    await user.type(screen.getByLabelText('title'), 'Test Challenge')
-    await user.type(screen.getByLabelText('Description'), 'Test description')
-    await user.type(screen.getByLabelText('Sort order'), '1')
-
-    await user.click(screen.getByRole('button', { name: 'Create' }))
-    await waitFor(() => {
-      expect(screen.queryByText('New Challenge')).not.toBeInTheDocument()
-    })
-  })
-
-  it('shows error on save failure', async () => {
-    global.fetch = vi.fn(() => Promise.resolve(new Response('Save failed', { status: 400 })))
-    render(
-      <DashboardLayout>
-        <ChallengeDetail />
-      </DashboardLayout>,
-      { router: 'memory', route: '/dashboard/challenges/new', routes: [{ path: '/dashboard/challenges/:id' }] }
-    )
-    const user = userEvent.setup()
-
-    await user.type(screen.getByLabelText('slug'), 'test-challenge')
-    await user.type(screen.getByLabelText('title'), 'Test Challenge')
-    await user.type(screen.getByLabelText('Description'), 'Test description')
-
-    await user.click(screen.getByRole('button', { name: 'Create' }))
-    await waitFor(() => {
-      expect(screen.getByText('Save failed')).toBeInTheDocument()
-    })
-  })
-
-  it('deletes existing challenge after confirmation', async () => {
-    global.fetch = vi.fn(() => Promise.resolve(new Response(null, { status: 200 })))
-
-    render(
-      <DashboardLayout>
-        <ChallengeDetail />
-      </DashboardLayout>,
-      { router: 'memory', route: '/dashboard/challenges/1', routes: [{ path: '/dashboard/challenges/:id' }] }
-    )
-    const user = userEvent.setup()
-
-    await waitFor(() => {
-      expect(screen.queryByText('Loading…')).not.toBeInTheDocument()
-    })
-
-    // Step 1: click Delete to enter confirmation mode
-    await user.click(screen.getByRole('button', { name: 'Delete' }))
-    // Step 2: click Confirm delete
-    await user.click(screen.getByRole('button', { name: 'Confirm delete' }))
-
-    await waitFor(() => {
-      expect(screen.queryByText('Edit Challenge')).not.toBeInTheDocument()
-    })
-  })
-
-  it('shows delete error after confirmation', async () => {
-    global.fetch = vi.fn(() => Promise.resolve(new Response('Delete failed', { status: 500 })))
-
-    render(
-      <DashboardLayout>
-        <ChallengeDetail />
-      </DashboardLayout>,
-      { router: 'memory', route: '/dashboard/challenges/1', routes: [{ path: '/dashboard/challenges/:id' }] }
-    )
-    const user = userEvent.setup()
-
-    await waitFor(() => {
-      expect(screen.queryByText('Loading…')).not.toBeInTheDocument()
-    })
-
-    await user.click(screen.getByRole('button', { name: 'Delete' }))
-    await user.click(screen.getByRole('button', { name: 'Confirm delete' }))
-
-    await waitFor(() => {
-      expect(screen.getByText('Delete failed')).toBeInTheDocument()
-    })
-  })
-
-  it('shows loading state for existing challenge', async () => {
+  it('shows loading state for an existing challenge', () => {
     render(
       <DashboardLayout>
         <ChallengeDetail />
@@ -157,5 +27,38 @@ describe('ChallengeDetail', () => {
       { router: 'memory', route: '/dashboard/challenges/1', routes: [{ path: '/dashboard/challenges/:id' }] }
     )
     expect(screen.getByText('Loading…')).toBeInTheDocument()
+  })
+
+  it('renders challenge details read-only, with no edit/delete controls', async () => {
+    render(
+      <DashboardLayout>
+        <ChallengeDetail />
+      </DashboardLayout>,
+      { router: 'memory', route: '/dashboard/challenges/1', routes: [{ path: '/dashboard/challenges/:id' }] }
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading…')).not.toBeInTheDocument()
+    })
+
+    expect(screen.getByRole('heading', { name: 'Portfolio RAG System' })).toBeInTheDocument()
+    expect(screen.getByText('portfolio-rag')).toBeInTheDocument()
+    expect(screen.getByText(/content\/challenges\/portfolio-rag\.md/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('slug')).not.toBeInTheDocument()
+  })
+
+  it('shows an error for an unknown challenge id', async () => {
+    render(
+      <DashboardLayout>
+        <ChallengeDetail />
+      </DashboardLayout>,
+      { router: 'memory', route: '/dashboard/challenges/999', routes: [{ path: '/dashboard/challenges/:id' }] }
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Challenge not found')).toBeInTheDocument()
+    })
   })
 })

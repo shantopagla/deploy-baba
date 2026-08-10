@@ -117,7 +117,7 @@ impl std::fmt::Debug for OpenApiSpec {
             .field("metadata", &self.metadata)
             .field(
                 "openapi_info",
-                &format!("OpenAPI v{} - {}", version_str, &self.openapi.info.title),
+                &format!("OpenAPI v{} - {}", version_str, self.openapi.info.title),
             )
             .finish()
     }

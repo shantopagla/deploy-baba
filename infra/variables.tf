@@ -148,3 +148,40 @@ variable "pdf_lambda_image_uri" {
   type        = string
   default     = "" # Set via justfile or tfvars after building image
 }
+
+# ─── Dev-origin bootstrap overrides (ADR-029 CDN separation) ──────────────────
+# The dev CloudFront distribution is a singleton managed in the default/prod
+# workspace, but its origins are dev-workspace resources (separate tfstate).
+# These are plain outputs from the dev workspace with no natural cross-state
+# reference, so — same pattern as pdf_lambda_image_uri above — they're pasted
+# into terraform.tfvars once after `just infra-apply dev`:
+#   tofu -chdir=infra output -raw function_url          → dev_ui_lambda_url
+#   tofu -chdir=infra output -raw auth_function_url     → dev_auth_lambda_url
+#   tofu -chdir=infra output -raw contact_api_endpoint  → dev_apigw_endpoint
+# dev_cloudfront_id is the reverse direction: read from the default workspace
+# (`tofu output -raw dev_cloudfront_distribution_id`) after Phase 2 below, then
+# pasted into terraform.tfvars for the *dev* workspace apply.
+
+variable "dev_ui_lambda_url" {
+  description = "Dev UI Lambda Function URL — origin for the dev CloudFront distribution"
+  type        = string
+  default     = ""
+}
+
+variable "dev_auth_lambda_url" {
+  description = "Dev auth Lambda Function URL — origin for the dev CloudFront distribution"
+  type        = string
+  default     = ""
+}
+
+variable "dev_apigw_endpoint" {
+  description = "Dev contact API Gateway invoke endpoint — origin for the dev CloudFront distribution"
+  type        = string
+  default     = ""
+}
+
+variable "dev_cloudfront_id" {
+  description = "Dev CloudFront distribution ID — written into deploy-baba/dev/deploy-config by the dev workspace apply"
+  type        = string
+  default     = ""
+}

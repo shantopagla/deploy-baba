@@ -142,10 +142,8 @@ impl Modify for ApiVersionModifier {
         crate::routes::api::admin::create_social_link,
         crate::routes::api::admin::update_social_link,
         crate::routes::api::admin::delete_social_link,
-        // ── Admin — challenges ──────────────────────────────────────────────
-        crate::routes::api::admin::create_challenge,
-        crate::routes::api::admin::update_challenge,
-        crate::routes::api::admin::delete_challenge,
+        // Challenges have no admin write endpoints — content/challenges/*.md is the
+        // source of truth (ADR-036); see GET /api/challenges* for public reads.
     ),
     components(schemas(
         api_openapi::models::ApiError,
@@ -179,7 +177,6 @@ impl Modify for ApiVersionModifier {
         api_openapi::models::AboutSectionInput,
         api_openapi::models::SocialLinkInput,
         api_openapi::models::SocialLinkResponse,
-        api_openapi::models::ChallengeInput,
         // W-RST: tailor pipeline (reserved — routes not yet implemented)
         api_openapi::models::TailorRequest,
         api_openapi::models::TailorResponse,

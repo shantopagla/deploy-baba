@@ -58,7 +58,7 @@ dev:
 
 # Full quality gate (fmt + lint + test + coverage floors + audit + HCL fmt check + agent)
 quality:
-    just web-types-offline && cargo xtask quality all && just web-coverage && just agent-lint && just agent-test && just agent-build && just mcp-build && just mcp-smoke && just mcp-rag-smoke && just mcp-cloud-build && just rag-index-embed && tofu fmt -check -recursive infra/
+    just web-types-offline && cargo xtask quality all && just web-coverage && just agent-lint && just agent-test && just agent-build && just mcp-build && just mcp-smoke && just mcp-rag-smoke && just mcp-cloud-build && just challenges-diff && just rag-index-embed && tofu fmt -check -recursive infra/
 
 # Build everything: all Rust Lambda zips + SPA + agent package + MCP gateway bundle
 build: lambda-build-all web-build agent-build mcp-cloud-build
@@ -154,6 +154,10 @@ lambda-deploy-all ENV="prod":
     just mcp-cloud-deploy {{ ENV }}
     just agent-deploy {{ ENV }}
     just pdf-deploy {{ ENV }}
+
+# Promote dev artifacts to prod (Lambda code + SPA copy, no rebuild)
+promote:
+    just aws-check {{ PROFILE }} && cargo xtask deploy promote --profile {{ PROFILE }}
 
 # Build the read-only context bundle consumed by the private cloud MCP gateway
 mcp-context-build:
@@ -579,6 +583,10 @@ dev-stack:
         sleep 1
     done
 
+    # Refresh the challenges cache from content/challenges/*.md now that migration 038
+    # (content_sha column) has been applied by the API server's startup migration runner.
+    just challenges-sync || echo "⚠️  challenges-sync failed — dashboard may show stale challenge content"
+
     # Start local S3 emulator (moto) for agent artifact storage
     MOTO_PID=""
     if command -v uv &>/dev/null; then
@@ -609,6 +617,8 @@ dev-stack:
         (cd services/agent && \
             S3_ENDPOINT_URL=http://localhost:5555 \
             ARTIFACTS_BUCKET=deploy-baba-artifacts \
+            AGENT_JOB_STORE=memory \
+            AGENT_TIMEOUT=240 \
             AWS_ACCESS_KEY_ID=testing \
             AWS_SECRET_ACCESS_KEY=testing \
             UI_BASE_URL=http://localhost:3001 \
@@ -689,11 +699,21 @@ build-image:
 push-image PROFILE="default" IMAGE="deploy-baba-ui:latest":
     just aws-check {{ PROFILE }} && cargo xtask deploy push --image {{ IMAGE }} --profile {{ PROFILE }}
 
-# Full deploy: quality gate → zip build → Lambda update (zip-based Lambda, ADR-003)
+# Full deploy: quality gate → all Lambdas + agent + mcp-cloud → wait → SPA → resume → RAG.
+# `deploy` is the canonical "ship everything" command — every path (frontend + all
+# backend services) is deployed and CloudFront is invalidated. Use `deploy-fast` /
+# `lambda-deploy` for narrow, explicit partial pushes instead.
 deploy ENV="prod":
-    just quality && just lambda-deploy {{ ENV }}
+    just quality
+    just lambda-deploy-all {{ ENV }}
+    just agent-deploy {{ ENV }}
+    just mcp-cloud-deploy {{ ENV }}
+    just lambda-wait {{ ENV }}
+    just spa-deploy {{ ENV }}
+    just resume-upload
+    just rag-sync {{ ENV }}
 
-# Deploy without quality gate (fast path)
+# Deploy without quality gate (fast path) — UI Lambda code only, no SPA/other services
 deploy-fast ENV="prod":
     just lambda-deploy {{ ENV }}
 
@@ -708,29 +728,23 @@ lambda-wait ENV="prod":
 # SPA-only deploy: build → S3 sync → sync-spa invoke → /health (steps 3–6)
 
 # Requires: SPA_BUCKET, UI_FN_NAME, FN_URL env vars (or set via infra outputs)
-spa-deploy:
-    just aws-check {{ PROFILE }} && cargo xtask deploy spa --profile {{ PROFILE }} --sha "$(git rev-parse HEAD)"
+spa-deploy ENV="prod":
+    just aws-check {{ PROFILE }} && cargo xtask deploy spa --profile {{ PROFILE }} --env {{ ENV }} --sha "$(git rev-parse HEAD)"
 
 # Full pipeline: quality → Lambda → wait → SPA build → S3 sync → sync-spa → /health
+# (UI Lambda + SPA only — skips the other 8 microservice Lambdas; use `deploy` for those)
 
 # Pass TAG=1 to also create a dev-vX.Y.Z git tag (mirrors deploy-dev.yml)
 deploy-full ENV="prod" TAG="":
     just quality
     just lambda-deploy {{ ENV }}
     just lambda-wait {{ ENV }}
-    just spa-deploy
+    just spa-deploy {{ ENV }}
     {{ if TAG != "" { "just release-tag dev push" } else { "echo 'Skipping dev tag — pass TAG=1 to enable'" } }}
 
-# Deploy all services + SPA + resume + RAG (full production push)
+# Deploy all services + SPA + resume + RAG (full production push) — alias for `deploy`
 deploy-all ENV="prod":
-    just quality
-    just lambda-deploy-all {{ ENV }}
-    just agent-deploy {{ ENV }}
-    just mcp-cloud-deploy {{ ENV }}
-    just lambda-wait {{ ENV }}
-    just spa-deploy
-    just resume-upload
-    just rag-sync {{ ENV }}
+    just deploy {{ ENV }}
 
 # ── Database (SQLite + S3) ───────────────────────────────────────────────────
 
@@ -794,6 +808,20 @@ resume-upload PROFILE="default":
 # Full pipeline: generate + upload
 resume PROFILE="default" DB="deploy-baba.db":
     just resume-generate {{ DB }} && just resume-upload {{ PROFILE }}
+
+# ── Challenges Content (content/challenges/*.md is the source of truth — ADR-036) ───────────
+
+# Sync content/challenges/*.md into SQLite (upsert changed, prune removed). Idempotent.
+challenges-sync DB="deploy-baba.db":
+    cargo xtask challenges sync --db-path {{ DB }} --content-dir content/challenges
+
+# Report drift between content/challenges/*.md and SQLite without writing (exits non-zero on drift)
+challenges-diff DB="deploy-baba.db":
+    cargo xtask challenges diff --db-path {{ DB }} --content-dir content/challenges
+
+# Generate a migration file for content/challenges/*.md changes (the only channel that reaches prod)
+challenges-migration:
+    cargo xtask challenges gen-migration --content-dir content/challenges --migrations-dir services/ui/migrations
 
 # ── RAG ──────────────────────────────────────────────────────────────────────
 

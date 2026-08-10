@@ -53,14 +53,13 @@ export default function Challenges() {
 
   return (
     <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Challenges</h1>
-        <Link
-          to="/dashboard/challenges/new"
-          className="bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
-        >
-          + New challenge
-        </Link>
+        <p className="text-sm text-gray-500 mt-1">
+          Source of truth: <code className="text-gray-400">content/challenges/*.md</code>. Add or
+          edit a file and run <code className="text-gray-400">just challenges-migration</code> to
+          publish changes.
+        </p>
       </div>
 
       {loading && <p className="text-gray-500 text-sm">Loading…</p>}

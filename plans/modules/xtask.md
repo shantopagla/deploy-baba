@@ -150,7 +150,7 @@ See `plans/drift/DRL-2026-05-03-coverage-floors.md` for full root-cause analysis
 | W-XT.4.6 | release subcommand | DONE | `xtask/src/release/{mod,git,version,changelog}.rs`; `just release-next/tag/promote`; 23 unit tests |
 | W-XT.4.7 | deploy spa subcommand | DONE | `xtask/src/deploy/spa.rs`; wait_lambda_active + build_spa + sync_to_s3 + invoke_sync_handler + smoke_test; `just deploy-full/spa-deploy/lambda-wait` |
 | W-XT.4.8 | Fix `get_crate_coverage` TOTAL line pollution | DONE | Per-file aggregation using `"{crate_name}/"` prefix filter; eliminates dependency code from measurement. See `DRL-2026-05-03-coverage-floors`. |
-| W-XT.4.9 | Generalize `deploy lambda` for all service packages | TODO | Add `--package` flag (default `deploy-baba-ui`); parameterize zip path + bootstrap path from package name; remove hardcoded `DEFAULT_FUNCTION` constant; require explicit `--function`. Enables all Lambda deploys to route through xtask instead of raw `aws` CLI. See W-PROM Phase 1.5. |
+| W-XT.4.9 | Generalize `deploy lambda` for all service packages | DONE | `--package` flag (default `deploy-baba-ui`), `--function` required; all justfile recipes route through xtask. See W-PROM Phase 1.5. |
 
 ---
 

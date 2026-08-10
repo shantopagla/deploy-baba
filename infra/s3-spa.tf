@@ -35,19 +35,18 @@ resource "aws_s3_bucket_lifecycle_configuration" "spa" {
 
     filter {}
 
-    expiration {
-      days = 14
-    }
-
     noncurrent_version_expiration {
       noncurrent_days = 1
     }
   }
 }
 
-# Allow CloudFront OAC to read SPA assets from this bucket (prod only)
+# Allow CloudFront OAC to read SPA assets from this bucket. Both the prod
+# distribution (main) and the dev distribution (ADR-029) live only in the
+# default/prod workspace's state, so a plain distribution-ARN condition can't
+# be expressed from the dev workspace's own apply — match on our own account
+# instead (any CloudFront distribution we own can read via OAC).
 resource "aws_s3_bucket_policy" "spa_cloudfront" {
-  count  = var.environment == "prod" ? 1 : 0
   bucket = aws_s3_bucket.spa.id
 
   policy = jsonencode({
@@ -63,7 +62,7 @@ resource "aws_s3_bucket_policy" "spa_cloudfront" {
         Resource = "${aws_s3_bucket.spa.arn}/*"
         Condition = {
           StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.main[0].arn
+            "AWS:SourceAccount" = data.aws_caller_identity.current.account_id
           }
         }
       }

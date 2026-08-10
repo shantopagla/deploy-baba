@@ -1,0 +1,48 @@
+name: Promote Dev → Prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_tag:
+        description: 'Skip release tag creation'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  promote:
+    name: Promote dev artifacts to prod
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.CI_DEPLOY_PROD_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Promote dev → prod
+        run: |
+          SKIP_FLAG=""
+          if [ "${{ inputs.skip_tag }}" = "true" ]; then
+            SKIP_FLAG="--skip-tag"
+          fi
+          cargo run -q -p xtask -- deploy promote $SKIP_FLAG

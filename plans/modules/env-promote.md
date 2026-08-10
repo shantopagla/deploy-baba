@@ -1,7 +1,7 @@
 # W-PROM: Environment Separation & Artifact Promotion
 
 **Path:** `xtask/src/deploy/promote.rs`, `infra/*.tf`, `.github/workflows/`  
-**Status:** WIP  
+**Status:** WIP — Phases 0–4 DONE; Phase 5 needs infra-apply (IAM update) + e2e verification  
 **Depends on:** W-CI, W-OTF, W-XT, W-MCP  
 **Depended on by:** (e2e testing, safe production deploys)
 
@@ -89,8 +89,7 @@ Origin groups with failover or cache behaviors per environment path (TBD — dep
 
 ### Phase 0: Immediate State Fix
 
-The `default` workspace has **129 resources fully tracked** (188KB state in S3). No imports needed.
-The `dev` workspace has 11 resources pointing to the **same** physical AWS resources as default (verified: same Cognito pool ID, same secret ARNs). It needs to be cleaned and re-initialized.
+Resolved: `default` workspace is prod, `dev` workspace is properly isolated.
 
 | ID | Task | Status |
 |---|---|---|
@@ -115,58 +114,60 @@ Key mapping: `workspace=default` → `environment=prod` (variable default); `wor
 ### Phase 1.5: Deploy Recipe Alignment
 
 Align all justfile deploy recipes with the workspace convention established in Phase 1.
-Currently, deploy recipes conflate AWS profile (credentials) with environment (function naming),
-hardcode function names, and use raw `aws` CLI instead of xtask for auxiliary Lambdas.
 
 | ID | Task | Status |
 |---|---|---|
-| W-PROM.4.5a | Generalize xtask `deploy lambda`: add `--package` flag, parameterize zip/bootstrap paths, remove hardcoded `DEFAULT_FUNCTION` (see W-XT.4.9) | TODO |
-| W-PROM.4.5b | Update all justfile `*-deploy` recipes: replace raw `aws lambda update-function-code` with `cargo xtask deploy lambda`, add `ENV` param (default `prod`) | TODO |
-| W-PROM.4.5c | Fix auxiliary Lambda function naming to match infra convention: `deploy-baba-{env}-{service}` (currently hardcoded without env segment, e.g. `deploy-baba-email` should be `deploy-baba-prod-email`) | TODO |
-| W-PROM.4.5d | Update `lambda-deploy-all`, `lambda-wait`, `deploy`, `deploy-fast` to accept and pass `ENV` | TODO |
+| W-PROM.4.5a | Generalize xtask `deploy lambda`: `--package` flag, parameterized `--function` | DONE |
+| W-PROM.4.5b | All justfile `*-deploy` recipes use `cargo xtask deploy lambda` with `ENV` param | DONE |
+| W-PROM.4.5c | All Lambda function names follow `deploy-baba-{env}-{service}` convention | DONE |
+| W-PROM.4.5d | `lambda-deploy-all` and per-service recipes accept and pass `ENV` (default `prod`) | DONE |
 
 Key mapping: `ENV=prod` → function `deploy-baba-prod[-service]`; `ENV=dev` → function `deploy-baba-dev[-service]`. Global `PROFILE` (default `deploy-baba`) handles AWS credentials independently.
 
 ### Phase 2: Infra Parameterization
 
+All infra `.tf` files use `${local.lambda_function_name}` (= `${project}-${env}`) for naming.
+
 | ID | Task | Status |
 |---|---|---|
-| W-PROM.4.6 | Parameterize email Lambda: `${project}-${env}-email` + log group + IAM role | TODO |
-| W-PROM.4.7 | Parameterize llm-proxy Lambda: `${project}-${env}-llm-proxy` + log group + IAM role | TODO |
-| W-PROM.4.8 | Parameterize mcp-gateway Lambda: `${project}-${env}-mcp-gateway` + log group + IAM role | TODO |
-| W-PROM.4.9 | Parameterize assets S3 bucket: `${project}-${env}-assets-${acct}` | TODO |
-| W-PROM.4.10 | Parameterize API Gateway: `${project}-${env}-contact-api` + add dev CORS origin | TODO |
-| W-PROM.4.11 | Add `count = var.environment == "prod" ? 1 : 0` on singletons (OIDC, VPC endpoints, ACM, CloudFront, CI roles) | TODO |
-| W-PROM.4.12 | Use OpenTofu `moved` blocks to migrate renamed prod resources in state (avoids destroy/recreate) | TODO |
-| W-PROM.4.13 | Fix CI deploy dev role (`ci-oidc.tf:70`) to target `${project}-dev` Lambda + dev S3 bucket | TODO |
+| W-PROM.4.6 | Parameterize email Lambda: `${local.lambda_function_name}-email` + log group + IAM role | DONE |
+| W-PROM.4.7 | Parameterize llm-proxy Lambda: `${local.lambda_function_name}-llm-proxy` + log group + IAM role | DONE |
+| W-PROM.4.8 | Parameterize mcp-gateway Lambda: `${local.lambda_function_name}-mcp-gateway` + log group + IAM role | DONE |
+| W-PROM.4.9 | Parameterize S3 buckets: SPA = `deploy-baba-${env}-spa-${acct}`, assets = `${assets_bucket_prefix}-assets-${acct}` | DONE |
+| W-PROM.4.10 | Parameterize API Gateway: `${local.lambda_function_name}-contact-api` + dev CORS origin | DONE |
+| W-PROM.4.11 | Singletons gated: `is_prod_acm`, `is_prod_cdn`, `is_prod_vpc`, `is_prod` (ci-oidc) | DONE |
+| W-PROM.4.12 | OpenTofu `moved` blocks for renamed prod resources | N/A — resources created with parameterized names from the start |
+| W-PROM.4.13 | CI deploy dev role targets `${project}-dev*` Lambda + `${project}-dev-spa-*` S3 | DONE |
 
 ### Phase 3: Dev Workspace Initialization
 
+Dev workspace exists (`tofu workspace list` shows `dev`). CI deploys to dev on every push to main.
+
 | ID | Task | Status |
 |---|---|---|
-| W-PROM.4.14 | `just infra-plan dev` → review plan (should show only dev-specific resources) | TODO |
-| W-PROM.4.15 | `just infra-apply dev` → create dev infrastructure | TODO |
-| W-PROM.4.16 | Create `deploy-baba/dev/deploy-config` secret with dev resource names | TODO |
-| W-PROM.4.17 | Verify: deploy to dev, smoke test `dev.sislam.com/health` | TODO |
+| W-PROM.4.14 | `just infra-plan dev` → review plan | DONE |
+| W-PROM.4.15 | `just infra-apply dev` → create dev infrastructure | DONE |
+| W-PROM.4.16 | Create `deploy-baba/dev/deploy-config` secret with dev resource names | DONE — CI reads it on every deploy |
+| W-PROM.4.17 | Verify: deploy to dev, smoke test | DONE — deploy-dev.yml runs /health check |
 
 ### Phase 4: Promote Command
 
 | ID | Task | Status |
 |---|---|---|
-| W-PROM.4.18 | Create `xtask/src/deploy/promote.rs`: download dev Lambda zips, upload to prod | TODO |
-| W-PROM.4.19 | Add S3 server-side copy (dev SPA → prod SPA, preserving cache-control) | TODO |
-| W-PROM.4.20 | Add CloudFront invalidation + smoke test to promote | TODO |
-| W-PROM.4.21 | Add release tag creation (vX.Y.Z) on successful promote | TODO |
-| W-PROM.4.22 | Wire `just promote` recipe in justfile | TODO |
+| W-PROM.4.18 | Create `xtask/src/deploy/promote.rs`: download dev Lambda zips, upload to prod | DONE |
+| W-PROM.4.19 | S3 server-side copy (dev SPA → prod SPA, preserving cache-control + stale deletion) | DONE |
+| W-PROM.4.20 | CloudFront invalidation + smoke test in promote flow | DONE |
+| W-PROM.4.21 | Release tag creation (vX.Y.Z) on successful promote (`--skip-tag` to opt out) | DONE |
+| W-PROM.4.22 | `just promote` recipe in justfile | DONE |
 
 ### Phase 5: CI/CD Updates
 
 | ID | Task | Status |
 |---|---|---|
-| W-PROM.4.23 | Update `deploy-dev.yml`: read `deploy-baba/dev/deploy-config`, target dev Lambdas | TODO |
-| W-PROM.4.24 | Update `deploy-prod.yml`: replace full rebuild with promote (keep rebuild as fallback) | TODO |
-| W-PROM.4.25 | Remove auto-promote tag from deploy-dev.yml (line 186-187); promotion is now explicit | DEFERRED — kept as interim until Phase 4 is built (2026-06-07) |
-| W-PROM.4.26 | End-to-end: push to main → CI → dev deploy → `just promote` → prod live | TODO |
+| W-PROM.4.23 | `deploy-dev.yml` reads `deploy-baba/dev/deploy-config`, targets dev Lambdas | DONE |
+| W-PROM.4.24 | `promote.yml` workflow_dispatch: artifact promote (rebuild fallback kept in `deploy-prod.yml`) | DONE |
+| W-PROM.4.25 | Remove auto-promote tag from deploy-dev.yml (line 186-187); promotion is now explicit | DEFERRED — kept as interim; both paths (tag-promote + artifact-promote) coexist (2026-06-07) |
+| W-PROM.4.26 | End-to-end: push to main → CI → dev deploy → `just promote` → prod live | TODO — requires `just infra-apply` to update prod CI role IAM, then manual test |
 
 ## W-PROM.5 Implementation Notes
 

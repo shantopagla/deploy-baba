@@ -28,10 +28,12 @@ resource "aws_s3_bucket_public_access_block" "assets" {
   restrict_public_buckets = true
 }
 
-# Grant CloudFront OAC read access to the assets bucket (prod only — dev
-# buckets are accessed directly during promote, not via CloudFront)
+# Grant CloudFront OAC read access to the assets bucket. Both the prod
+# distribution (main) and the dev distribution (ADR-029) live only in the
+# default/prod workspace's state, so a plain distribution-ARN condition can't
+# be expressed from the dev workspace's own apply — match on our own account
+# instead (any CloudFront distribution we own can read via OAC).
 resource "aws_s3_bucket_policy" "assets_cloudfront" {
-  count  = var.environment == "prod" ? 1 : 0
   bucket = aws_s3_bucket.assets.id
 
   policy = jsonencode({
@@ -47,7 +49,7 @@ resource "aws_s3_bucket_policy" "assets_cloudfront" {
         Resource = "${aws_s3_bucket.assets.arn}/*"
         Condition = {
           StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.main[0].arn
+            "AWS:SourceAccount" = data.aws_caller_identity.current.account_id
           }
         }
       }

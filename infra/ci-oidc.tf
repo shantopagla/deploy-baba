@@ -119,7 +119,10 @@ resource "aws_iam_role" "ci_deploy_prod" {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
         }
         StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:sislam-com/deploy-baba:ref:refs/tags/v*"
+          "token.actions.githubusercontent.com:sub" = [
+            "repo:sislam-com/deploy-baba:ref:refs/tags/v*",
+            "repo:sislam-com/deploy-baba:ref:refs/heads/main"
+          ]
         }
       }
     }]
@@ -152,10 +155,28 @@ resource "aws_iam_role_policy" "ci_deploy_prod" {
         Resource = "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-prod*"
       },
       {
-        Sid      = "ReadDeployConfig"
+        Sid    = "ReadDeployConfig"
+        Effect = "Allow"
+        Action = "secretsmanager:GetSecretValue"
+        Resource = [
+          "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/prod/deploy-config*",
+          "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/dev/deploy-config*"
+        ]
+      },
+      {
+        Sid      = "ReadDevLambda"
         Effect   = "Allow"
-        Action   = "secretsmanager:GetSecretValue"
-        Resource = "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/prod/deploy-config*"
+        Action   = ["lambda:GetFunction"]
+        Resource = "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-dev*"
+      },
+      {
+        Sid    = "ReadDevSPA"
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:ListBucket"]
+        Resource = [
+          "arn:aws:s3:::${var.project_name}-dev-spa-*",
+          "arn:aws:s3:::${var.project_name}-dev-spa-*/*"
+        ]
       },
       {
         Sid      = "InvalidateCDN"

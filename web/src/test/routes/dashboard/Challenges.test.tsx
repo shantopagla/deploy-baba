@@ -19,16 +19,14 @@ describe('Challenges', () => {
     expect(screen.getByRole('heading', { name: 'Challenges' })).toBeInTheDocument()
   })
 
-  it('renders new challenge button', () => {
+  it('renders source-of-truth note', () => {
     render(
       <DashboardLayout>
         <Challenges />
       </DashboardLayout>,
       { router: 'memory', route: '/dashboard/challenges' }
     )
-    const newButton = screen.getByText('+ New challenge')
-    expect(newButton).toBeInTheDocument()
-    expect(newButton).toHaveAttribute('href', '/dashboard/challenges/new')
+    expect(screen.getByText(/content\/challenges/)).toBeInTheDocument()
   })
 
   it('renders loading state initially', () => {

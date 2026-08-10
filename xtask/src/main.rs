@@ -9,6 +9,7 @@ use std::process::exit;
 mod aws;
 mod build;
 mod cache;
+mod challenges;
 mod coverage;
 mod database;
 mod deploy;
@@ -80,6 +81,11 @@ enum Commands {
         #[command(subcommand)]
         action: rag::RagAction,
     },
+    /// Challenges content sync (content/challenges/*.md is the source of truth — ADR-036)
+    Challenges {
+        #[command(subcommand)]
+        action: challenges::ChallengesAction,
+    },
     /// Resume generation and upload
     Resume {
         #[command(subcommand)]
@@ -125,6 +131,7 @@ async fn run() -> anyhow::Result<()> {
         Commands::Cache { action } => cache::execute(action).await,
         Commands::Database { action } => database::execute(action).await,
         Commands::Rag { action } => rag::execute(action).await,
+        Commands::Challenges { action } => challenges::execute(action).await,
         Commands::Resume { action } => resume::execute(action).await,
         Commands::Secret { action } => secret::execute(action).await,
         Commands::Publish {

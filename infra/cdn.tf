@@ -84,6 +84,14 @@ locals {
   # Strip "https://" prefix and trailing "/" from the Lambda Function URL
   lambda_origin_domain      = replace(replace(aws_lambda_function_url.baba.function_url, "https://", ""), "/", "")
   auth_lambda_origin_domain = replace(replace(aws_lambda_function_url.auth.function_url, "https://", ""), "/", "")
+
+  # Dev origins — bootstrapped from the dev workspace via terraform.tfvars overrides
+  # (see variables.tf). Only meaningful once dev_ui_lambda_url etc. are populated.
+  dev_lambda_origin_domain      = replace(replace(var.dev_ui_lambda_url, "https://", ""), "/", "")
+  dev_auth_lambda_origin_domain = replace(replace(var.dev_auth_lambda_url, "https://", ""), "/", "")
+  dev_apigw_domain              = replace(replace(var.dev_apigw_endpoint, "https://", ""), "/", "")
+  dev_spa_bucket_domain         = "deploy-baba-dev-spa-${data.aws_caller_identity.current.account_id}.s3.${var.region}.amazonaws.com"
+  dev_assets_bucket_domain      = "deploy-baba-dev-assets-${data.aws_caller_identity.current.account_id}.s3.${var.region}.amazonaws.com"
 }
 
 # ─── CloudFront OAC for Lambda ─────────────────────────────────────────────────
@@ -123,7 +131,7 @@ resource "aws_cloudfront_distribution" "main" {
   enabled         = true
   is_ipv6_enabled = true
   price_class     = "PriceClass_100"
-  aliases         = [var.domain_name, "www.${var.domain_name}", "dev.${var.domain_name}"]
+  aliases         = [var.domain_name, "www.${var.domain_name}"]
   comment         = "Portfolio site — ${var.domain_name}"
 
   origin {
@@ -390,6 +398,266 @@ resource "aws_cloudfront_distribution" "main" {
   }
 }
 
+# ─── Dev CloudFront Distribution (ADR-029) ─────────────────────────────────────
+# A second, independent distribution for dev.${var.domain_name} — mirrors `main`'s
+# origins/behaviors but points at the dev workspace's own Lambda/S3/API-Gateway
+# resources (see dev_* locals above). Singleton like `main` (lives in the
+# default/prod workspace only, since CDN + Route53 + ACM are prod-only
+# singletons); the dev workspace's own resources are referenced via
+# terraform.tfvars bootstrap overrides, not cross-workspace state.
+resource "aws_cloudfront_distribution" "dev" {
+  count           = local.is_prod_cdn ? 1 : 0
+  enabled         = true
+  is_ipv6_enabled = true
+  price_class     = "PriceClass_100"
+  aliases         = ["dev.${var.domain_name}"]
+  comment         = "Portfolio site (dev) — dev.${var.domain_name}"
+
+  origin {
+    domain_name              = local.dev_lambda_origin_domain
+    origin_id                = "lambda-function-url"
+    origin_access_control_id = aws_cloudfront_origin_access_control.lambda[0].id
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  origin {
+    domain_name              = local.dev_assets_bucket_domain
+    origin_id                = "s3-assets"
+    origin_access_control_id = aws_cloudfront_origin_access_control.assets[0].id
+  }
+
+  origin {
+    domain_name              = local.dev_spa_bucket_domain
+    origin_id                = "s3-spa"
+    origin_access_control_id = aws_cloudfront_origin_access_control.spa[0].id
+  }
+
+  origin {
+    domain_name              = local.dev_auth_lambda_origin_domain
+    origin_id                = "auth-lambda-function-url"
+    origin_access_control_id = aws_cloudfront_origin_access_control.lambda[0].id
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  origin {
+    domain_name = local.dev_apigw_domain
+    origin_id   = "apigw-contact"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/resume/*"
+    target_origin_id       = "s3-assets"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id = data.aws_cloudfront_cache_policy.caching_optimized.id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/api/auth/*"
+    target_origin_id       = "apigw-contact"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/api/contact"
+    target_origin_id       = "apigw-contact"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/api/ask"
+    target_origin_id       = "apigw-contact"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/mcp*"
+    target_origin_id       = "apigw-contact"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/api/v1/agent/*"
+    target_origin_id       = "apigw-contact"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/api/*"
+    target_origin_id       = "lambda-function-url"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.lambda_oac[0].id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/auth/callback"
+    target_origin_id       = "lambda-function-url"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.lambda_oac[0].id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/auth/set-session"
+    target_origin_id       = "lambda-function-url"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = aws_cloudfront_cache_policy.no_cache_with_cookies[0].id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.lambda_oac[0].id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/auth/logout"
+    target_origin_id       = "lambda-function-url"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = aws_cloudfront_cache_policy.no_cache_with_cookies[0].id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.lambda_oac[0].id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/health"
+    target_origin_id       = "lambda-function-url"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.lambda_oac[0].id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/docs"
+    target_origin_id       = "lambda-function-url"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.lambda_oac[0].id
+  }
+
+  ordered_cache_behavior {
+    path_pattern           = "/assets/*"
+    target_origin_id       = "s3-spa"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id = data.aws_cloudfront_cache_policy.caching_optimized.id
+  }
+
+  default_cache_behavior {
+    target_origin_id       = "s3-spa"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id = data.aws_cloudfront_cache_policy.caching_disabled.id
+  }
+
+  custom_error_response {
+    error_code            = 403
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 0
+  }
+
+  custom_error_response {
+    error_code            = 404
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 0
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    acm_certificate_arn      = aws_acm_certificate_validation.wildcard[0].certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+
+  tags = {
+    Name = "${var.project_name}-dev-cdn"
+  }
+}
+
 # ─── Route53 Records (prod-only) ──────────────────────────────────────────────
 
 resource "aws_route53_record" "apex_a" {
@@ -456,8 +724,8 @@ resource "aws_route53_record" "dev_a" {
   allow_overwrite = true
 
   alias {
-    name                   = aws_cloudfront_distribution.main[0].domain_name
-    zone_id                = aws_cloudfront_distribution.main[0].hosted_zone_id
+    name                   = aws_cloudfront_distribution.dev[0].domain_name
+    zone_id                = aws_cloudfront_distribution.dev[0].hosted_zone_id
     evaluate_target_health = false
   }
 }
@@ -470,8 +738,8 @@ resource "aws_route53_record" "dev_aaaa" {
   allow_overwrite = true
 
   alias {
-    name                   = aws_cloudfront_distribution.main[0].domain_name
-    zone_id                = aws_cloudfront_distribution.main[0].hosted_zone_id
+    name                   = aws_cloudfront_distribution.dev[0].domain_name
+    zone_id                = aws_cloudfront_distribution.dev[0].hosted_zone_id
     evaluate_target_health = false
   }
 }

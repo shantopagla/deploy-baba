@@ -154,6 +154,14 @@ const MIGRATIONS: &[(&str, &str)] = &[
         "037_sync_dashboard_2026-06-04",
         include_str!("../migrations/037_sync_dashboard_2026-06-04.sql"),
     ),
+    (
+        "038_challenges_content_sha",
+        include_str!("../migrations/038_challenges_content_sha.sql"),
+    ),
+    (
+        "039_challenges_content_2026-07-08",
+        include_str!("../migrations/039_challenges_content_2026-07-08.sql"),
+    ),
 ];
 
 /// Re-exported from `api_openapi::models::social` — the canonical SSOT.
@@ -188,11 +196,18 @@ impl Db {
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
 
         let integrity: String = conn.query_row("PRAGMA quick_check;", [], |row| row.get(0))?;
-        if integrity != "ok" {
-            anyhow::bail!(
-                "SQLite integrity check failed for {path}: {integrity}. Delete the file and restart to recreate from migrations."
+        let conn = if integrity != "ok" {
+            tracing::warn!(
+                "SQLite integrity check failed for {path}: {integrity} — deleting corrupt DB and recreating from migrations"
             );
-        }
+            drop(conn);
+            std::fs::remove_file(path)?;
+            let conn = Connection::open(path)?;
+            conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
+            conn
+        } else {
+            conn
+        };
 
         let db = Db {
             conn: Mutex::new(conn),
